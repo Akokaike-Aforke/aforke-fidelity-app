@@ -40,6 +40,10 @@ const user2Schema = new mongoose.Schema(
       maxLength: 14,
     },
     accounts: Array,
+    selectedAccount: {
+        type: Number,
+        default: 0,
+    },
     username: {
       type: String,
       required: [true, "a username is required"],

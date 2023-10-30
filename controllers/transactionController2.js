@@ -19,7 +19,10 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
   const { receiverUsername, transactionAmount, pin, description} = req.body;
   const sender = await User.findById(req.params.id);
   const receiver = await User.findOne({ username: receiverUsername });
-  const clearedBalance = sender.accounts[0].clearedBalance;
+  const selectedAccount = sender.selectedAccount;
+  const selectedAccountReceiver = receiver.selectedAccount;
+//   const selectedAccount = 1;
+  const clearedBalance = sender.accounts[selectedAccount].clearedBalance;
   if (!sender) {
     return next(
       new AppError(`No user found with this id: ${req.params.id}`, 404)
@@ -61,24 +64,24 @@ if (transactionAmount > clearedBalance || clearedBalance < 0) {
     timeOfTransaction,
   });
   const userAccount = await Account.findByIdAndUpdate(
-      sender.accounts[0]._id,
+      sender.accounts[selectedAccount]._id,
       {
           $push: {transactions: senderTransaction}, 
           $inc: {accountBalance: -transactionAmount, clearedBalance: -transactionAmount},
         }
   );
-  const otherAccount = await Account.findByIdAndUpdate(receiver.accounts[0]._id, {
+  const otherAccount = await Account.findByIdAndUpdate(receiver.accounts[selectedAccountReceiver]._id, {
     $push: { transactions: receiverTransaction},
     $inc: {accountBalance: transactionAmount, clearedBalance: transactionAmount},
   });
   await User.findOneAndUpdate(
-    { _id: sender._id, "accounts._id": sender.accounts[0]._id },
+    { _id: sender._id, "accounts._id": sender.accounts[selectedAccount]._id },
     { $push: { "accounts.$.transactions": senderTransaction },
     $inc: {"accounts.$.accountBalance": -transactionAmount, "accounts.$.clearedBalance": -transactionAmount}
  }
   );
   await User.findOneAndUpdate(
-    { _id: receiver._id, "accounts._id": receiver.accounts[0]._id },
+    { _id: receiver._id, "accounts._id": receiver.accounts[selectedAccountReceiver]._id },
     { $push: { "accounts.$.transactions": receiverTransaction },
     $inc: {"accounts.$.accountBalance": transactionAmount, "accounts.$.clearedBalance": transactionAmount}
  }
@@ -103,6 +106,7 @@ if (transactionAmount > clearedBalance || clearedBalance < 0) {
 
 exports.deposit = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id);
+  const selectedAccount = user.selectedAccount;
   const timeOfTransaction = new Date();
   const { transactionAmount, pin, description } = req.body;
   const deposit = await Transaction2.create({
@@ -112,12 +116,13 @@ exports.deposit = catchAsync(async (req, res, next) => {
     description,
     timeOfTransaction,
   });
-const userAccount = await Account.findByIdAndUpdate(user.accounts[0]._id, {
+  
+const userAccount = await Account.findByIdAndUpdate(user.accounts[selectedAccount]._id, {
   $push: { transactions: deposit },
   $inc: { accountBalance: transactionAmount, clearedBalance: transactionAmount },
 });
   await User.findOneAndUpdate(
-    { _id: user._id, "accounts._id": user.accounts[0]._id },
+    { _id: user._id, "accounts._id": user.accounts[selectedAccount]._id },
     {
       $push: { "accounts.$.transactions": deposit },
       $inc: { "accounts.$.accountBalance": transactionAmount, "accounts.$.clearedBalance": transactionAmount },
