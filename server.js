@@ -2,11 +2,11 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 
 //handling errors(uncaught exceptions) for synchronous codes
-process.on("uncaughtException", err =>{
+process.on("uncaughtException", (err) => {
   console.log(err);
   console.log("UNCAUGHT EXCEPTION!!! shutting down");
-    process.exit(1);
-})
+  process.exit(1);
+});
 
 const app = require("./app");
 dotenv.config({ path: "./config.env" });
@@ -19,6 +19,8 @@ mongoose
     useNewUrlParser: true,
     useCreateIndex: true,
     useFindAndModify: false,
+    // w: 1,
+    // j: true,
   })
   .then((con) => {
     console.log("successfully connected to database...");
@@ -32,7 +34,7 @@ const server = app.listen(PORT, () => {
 process.on("unhandledRejection", (err) => {
   console.log(err);
   console.log("UNHANDLED REJECTION!!! shutting down");
-  server.close(()=>{ 
-  process.exit(1); 
-})
+  server.close(() => {
+    process.exit(1);
+  });
 });

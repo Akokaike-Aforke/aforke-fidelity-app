@@ -2,8 +2,9 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
-const Account = require("./accountModel");
-const userSchema = new mongoose.Schema(
+const Account = require("./accountModel2");
+const Transaction = require("./Transfers");
+const user2Schema = new mongoose.Schema(
   {
     fullname: {
       type: String,
@@ -31,6 +32,12 @@ const userSchema = new mongoose.Schema(
       validate: [validator.isEmail, "Please provide a valid email"],
       unique: [true, "this email is already in use"],
       lowercase: true,
+    },
+    bvn: {
+      type: String,
+      unique: [true, "this bvn number is already in use"],
+      minLength: 14,
+      maxLength: 14,
     },
     accounts: Array,
     username: {
@@ -92,34 +99,18 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-//virtual populate the userSchema with transactions
-userSchema.virtual("transactions", {
-  ref: "Transaction",
-  foreignField: "accountOwner",
-  localField: "_id",
-});
-// userSchema.virtual("clearedBalance").get(function () {
-//   return this.accounts[0].accountBalance - 1000;
+// user2Schema.virtual("accounts.clearedBalance").get(function () {
+//   return this.accounts.accountBalance - 1000;
 // });
-// userSchema.virtual("availableBalance").get(function(){
-//   return this.accounts[0].accountBalance
-// })
-
-
-//use virtual populate instead of child referencing to populate transactions
-userSchema.virtual("transaction", {
-  ref: "Transaction",
-  localField: "_id",
-  foreignField: ["sender", "receiver"]
+user2Schema.pre("save", function (next) {
+  if (!this.bvn) {
+    // Generate a random 10-digit account number
+    const uniqueBVN = generateUniqueBVN();
+    this.bvn = uniqueBVN;
+  }
+  next();
 });
-
-// userSchema.virtual("receiver", {
-//   ref: "Transaction",
-//   foreignField: "receiver",
-//   localField: "_id",
-// });
-
-userSchema.pre("save", async function (next) {
+user2Schema.pre("save", async function (next) {
   const accountPromises = this.accounts.map(
     async (id) => await Account.findById(id)
   );
@@ -127,24 +118,19 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-
-// populate all find queries in User model
-// userSchema.pre(/^find/, function(next)
+// userSchema.pre("save", async function(next)
 // {
-//   this.populate({
-//     path: "transactions",
-//     select: "-__v -passwordChangedAt"
-//   })
+//     const transactionPromises = this.transactions.map( async (id) => await Transaction.findById(id));
+//     this.transactions = await Promise.all(transactionPromises);
+//     next();
 // })
-
-
 
 // userSchema.pre("save", function (next) {
 //   this.clearedBalance = this.balance - 1000;
 //   next();
 // });
 
-userSchema.pre("save", async function (next) {
+user2Schema.pre("save", async function (next) {
   //only run this function if password was modified
   if (!this.isModified("password")) {
     return next();
@@ -156,7 +142,7 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-userSchema.pre("save", async function (next) {
+user2Schema.pre("save", async function (next) {
   if (!this.isModified("pin")) {
     return next();
   }
@@ -165,7 +151,7 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-userSchema.pre("save", function (next) {
+user2Schema.pre("save", function (next) {
   if (!this.isModified("password") || this.isNew) {
     return next();
   }
@@ -173,7 +159,7 @@ userSchema.pre("save", function (next) {
   next();
 });
 
-userSchema.pre("save", function (next) {
+user2Schema.pre("save", function (next) {
   if (!this.isModified("pin") || this.isNew) {
     return next();
   }
@@ -181,7 +167,7 @@ userSchema.pre("save", function (next) {
   next();
 });
 
-userSchema.pre(/^find/, function (next) {
+user2Schema.pre(/^find/, function (next) {
   this.find({ active: { $ne: false } });
   next();
 });
@@ -193,14 +179,14 @@ userSchema.pre(/^find/, function (next) {
 //   return await bcrypt.compare(candidatePassword, userPassword);
 // };
 
-userSchema.methods.correctPasswordOrPin = async function (
+user2Schema.methods.correctPasswordOrPin = async function (
   candidateValue,
   userValue
 ) {
   return await bcrypt.compare(candidateValue, userValue);
 };
 
-userSchema.methods.changedPasswordAfter = function (JWTTimeStamp) {
+user2Schema.methods.changedPasswordAfter = function (JWTTimeStamp) {
   if (this.passwordChangedAt) {
     const changedTimeStamp = parseInt(
       this.passwordChangedAt.getTime() / 1000,
@@ -211,12 +197,12 @@ userSchema.methods.changedPasswordAfter = function (JWTTimeStamp) {
   return false;
 };
 
-userSchema.methods.createPasswordResetToken = function () {
+user2Schema.methods.createPasswordResetToken = function () {
   // const resetToken = crypto.randomBytes(32).toString("hex");
   // this.passwordResetToken = crypto.createHash("sha256").update(resetToken).digest("hex");
   //  console.log({resetToken}, this.passwordResetToken)
   // this.passwordResetExpires = Date.now() + (10 * 60 * 1000);
-  // return resetToken; 
+  // return resetToken;
 
   console.log("reset reset");
   const resetToken = crypto.randomBytes(32).toString("hex");
@@ -228,6 +214,15 @@ userSchema.methods.createPasswordResetToken = function () {
   console.log({ resetToken }, this.passwordResetToken);
   return resetToken;
 };
+
+
+
+function generateUniqueBVN() {
+  const min = 10000000000000; // Minimum 14-digit number
+  const max = 99999999999999; // Maximum 14-digit number
+  const randomAccountNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+  return randomAccountNumber.toString();
+}
 // userSchema.post("save", async function () {
 //   const accountPromises = this.accounts.map(
 //     async (id) => await Account.findById(id)
@@ -235,5 +230,5 @@ userSchema.methods.createPasswordResetToken = function () {
 //   this.accounts = await Promise.all(accountPromises);
 // });
 
-const User = mongoose.model("User", userSchema);
-module.exports = User;
+const User2 = mongoose.model("User2", user2Schema);
+module.exports = User2;
