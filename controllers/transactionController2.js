@@ -19,6 +19,7 @@ exports.getAllTransactions = catchAsync(async (req, res, next) => {
 
 exports.getSpecifiedTransactions = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id);
+  console.log(req.body)
   
   const { startDate, endDate, activity, clientUsername } = req.body;
   let {selectedAccount} = req.body
