@@ -19,8 +19,52 @@ exports.getAllTransactions = catchAsync(async (req, res, next) => {
 
 exports.getSpecifiedTransactions = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id);
-  const selectedAccount = user.selectedAccount;
-  const { startDate, endDate } = req.body;
+  
+  const { startDate, endDate, activity, clientUsername } = req.body;
+  let {selectedAccount} = req.body
+  if(!selectedAccount)
+  selectedAccount = user.selectedAccount;
+  const transactions = user.accounts[selectedAccount].transactions;
+
+  let specifiedTransactions = [...transactions];
+  if(startDate && endDate)
+  {
+  specifiedTransactions = transactions.filter((transaction) => {
+    return (
+      Number(
+        new Date(new Date(transaction.timeOfTransaction).toDateString())
+      ) >= Number(new Date(new Date(startDate).toDateString())) &&
+      Number(
+        new Date(new Date(transaction.timeOfTransaction).toDateString())
+      ) <= Number(new Date(new Date(endDate).toDateString()))
+    );
+  });
+}
+  
+  if(activity)
+  specifiedTransactions = specifiedTransactions.filter((transaction) => {
+    return transaction.type === activity;
+  })
+
+  if(clientUsername){
+    specifiedTransactions = specifiedTransactions.filter((transaction) => {
+      return transaction.client === clientUsername
+    })
+  }
+  res.status(200).json({
+    status: "success",
+    result: specifiedTransactions.length,
+    data: {
+      specifiedTransactions,
+    },
+  });
+});
+
+
+exports.getMoreTransactions = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+  // const selectedAccount = user.selectedAccount;
+  const { startDate, endDate, selectedAccount } = req.body;
   const transactions = user.accounts[selectedAccount].transactions;
   const specifiedTransactions = transactions.filter((transaction) => {
     return (
@@ -32,13 +76,13 @@ exports.getSpecifiedTransactions = catchAsync(async (req, res, next) => {
       ) <= Number(new Date(new Date(endDate).toDateString()))
     );
   });
-  res.status(200).json({
-    status: "success",
-    result: specifiedTransactions.length,
-    data: {
-      specifiedTransactions,
-    },
-  });
+  // res.status(200).json({
+  //   status: "success",
+  //   result: specifiedTransactions.length,
+  //   data: {
+  //     specifiedTransactions,
+  //   },
+  // });
 });
 
 exports.createTransaction = catchAsync(async (req, res, next) => {
@@ -186,7 +230,7 @@ exports.deposit = catchAsync(async (req, res, next) => {
   const clientAccountNumber = user.accounts[selectedAccount].accountNumber;
   const clientFullname = user.fullname;
   const deposit = await Transaction2.create({
-    type: "credit",
+    type: "self transfer",
     client: "self",
     clientAccountNumber,
     clientFullname,
@@ -234,7 +278,7 @@ exports.deposit = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     data: {
-      type: "credit",
+      type: "self transfer",
       client: "self",
       clientAccountNumber,
       clientFullname,
