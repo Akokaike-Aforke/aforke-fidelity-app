@@ -5,10 +5,17 @@ const transferSchema = new mongoose.Schema(
       type: String,
       enum: ["credit", "debit"],
     },
+    charges: {
+      type: Number,
+      default: 0
+    },
     client: String,
-      transactionAmount: Number,
-      timeOfTransaction: Date,
-      description: String
+    clientAccountNumber: Number,
+    clientFullname: String,
+    transactionAmount: Number,
+    timeOfTransaction: Date,
+    description: String,
+    balance: Number
   },
   {
     toJSON: { virtuals: true },
@@ -16,10 +23,11 @@ const transferSchema = new mongoose.Schema(
   }
 );
 
-// transactionSchema.pre("save", function(next){
-//     this.description = this.description.subString(0, 100);
-//     next();
-// })
+transferSchema.pre("save", function(next){
+  if(this.description)
+    this.description = this.description.substring(0, 30);
+    next();
+})
 
 transferSchema.pre(/^find/, function (next) {
   this.populate({

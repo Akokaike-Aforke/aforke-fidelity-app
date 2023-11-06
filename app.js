@@ -19,7 +19,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 const limiter = rateLimit({
-  max: 200,
+  max: 1000,
   windowMs: 60 * 60 * 1000,
   message: "Too many requests from the IP. Please try again in an hour!",
 });

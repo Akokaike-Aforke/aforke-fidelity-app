@@ -1,7 +1,7 @@
 // const User = require("./../models/userModel");
 const User = require("./../models/userModel2");
 // const Account = require("./../models/accountModel")
-const Account = require("./../models/accountModel2")
+const Account = require("./../models/accountModel2");
 const AppError = require("./../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
 const mongoose = require("mongoose");
@@ -73,7 +73,7 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
 });
 
 exports.getUser = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.params.id).populate("transactions")
+  const user = await User.findById(req.params.id).populate("transactions");
   if (!user) {
     return next(
       new AppError(`No user found with the id: ${req.params.id}`, 404)
@@ -101,14 +101,14 @@ exports.createUser = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.updateUser = catchAsync(async (req, res, next) => {
+exports.updateMe = catchAsync(async (req, res, next) => {
   const user = await User.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true,
   });
   if (!user) {
     return next(
-      new AppError(`No tour found with the id: ${req.params.id}`, 404)
+      new AppError(`No user found with the id: ${req.params.id}`, 404)
     );
   }
   res.status(200).json({
@@ -137,6 +137,25 @@ exports.getMe = (req, res, next) => {
   req.params.id = req.user.id;
   next();
 };
+
+exports.updateSelectedAccount = catchAsync(async (req, res, next) => {
+  const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+  if (!user) {
+    return next(
+      new AppError(`No user found with the id: ${req.params.id}`, 404)
+    );
+  }
+  res.status(200).json({
+    status: "success",
+    timeUpdated: req.timeDone,
+    data: {
+      user,
+    },
+  });
+});
 
 // exports.transfer = catchAsync(async (req, res, next) => {
 //   const { receiverUsername, transferAmount, pin, description } = req.body;

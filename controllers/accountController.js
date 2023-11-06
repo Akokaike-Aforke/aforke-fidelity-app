@@ -16,39 +16,32 @@ exports.getAllAccounts = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.createAccount = catchAsync(async (req, res, next) => {
-  const newAccount = Account.create({
-    accountType: req.body.accountType,
-    transactions: [],
-    // clearedBalance: req.body.clearedBalance
-  });
-  req.body.account = newAccount;
-  next();
-});
+let accountNumber;
+const generatedAccountNumbers = new Set();
 exports.createAnotherAccount = catchAsync(async (req, res, next) => {
-    const user = await User.findById(req.params.id);
+  const accountNumber = generateUniqueAccountNumber();
+  const user = await User.findById(req.params.id);
   const { accountType } = req.body;
   const newAccount = await Account.create({
     accountType,
+    accountNumber,
     transactions: [],
   });
   req.body.account = newAccount;
   await User.findOneAndUpdate(
-    { _id: user._id},
+    { _id: user._id },
     {
       $push: { accounts: newAccount },
-    //   $inc: {
-    //     "accounts.$.accountBalance": transactionAmount,
-    //     "accounts.$.clearedBalance": transactionAmount,
-    //   },
+      //   $inc: {
+      //     "accounts.$.accountBalance": transactionAmount,
+      //     "accounts.$.clearedBalance": transactionAmount,
+      //   },
     }
   );
   res.status(200).json({
     status: "success",
     // message: `Transfer to ${receiverUsername} is successful`,
-    data: {
-      accountType,
-    },
+    newAccount,
   });
 });
 
@@ -57,3 +50,49 @@ exports.createAnotherAccount = catchAsync(async (req, res, next) => {
 //   req.body.account = account;
 //   next();
 // })
+
+// account2Schema.pre("save", function (next) {
+//   if (!this.accountNumber) {
+//     // Generate a random 10-digit account number
+//     const uniqueAccountNumber = generateUniqueAccountNumber();
+//     this.accountNumber = uniqueAccountNumber;
+//   }
+//   next();
+// });
+
+// Define a function to generate a unique 10-digit account number
+function generateUniqueAccountNumber() {
+  const min = 1000000000; // Minimum 10-digit number
+  const max = 9999999999; // Maximum 10-digit number
+  const randomAccountNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+  const accountNumberString = randomAccountNumber.toString();
+  if (!generatedAccountNumbers.has(accountNumberString)) {
+    // The generated number is unique
+    generatedAccountNumbers.add(accountNumberString);
+    return accountNumberString;
+  }
+}
+
+exports.createAccountNumber = (req, res, next) => {
+  accountNumber = generateUniqueAccountNumber();
+  res.status(200).json({
+    status: "success",
+    accountNumber,
+  });
+};
+
+exports.createAccount = catchAsync(async (req, res, next) => {
+  const newAccount = Account.create({
+    accountType: req.body.accountType,
+    accountNumber,
+    transactions: [],
+  });
+  req.body.account = newAccount;
+  next();
+  // res.status(200).json({
+  //   status: "success",
+  //   data: {
+  //     accountNumber: req.body.accountNumber,
+  //   },
+  // });
+});

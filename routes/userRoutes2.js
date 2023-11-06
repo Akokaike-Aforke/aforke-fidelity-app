@@ -8,16 +8,23 @@ const {
   deleteUser,
   getTimeCreated,
   updateMe,
+  updateSelectedAccount,
   deleteMe,
   getMe,
   transfer,
   deposit,
 } = require("./../controllers/userController");
-const {createAccount} = require("./../controllers/accountController")
+const { createAccount } = require("./../controllers/accountController");
 const authController = require("./../controllers/authController");
 // const transactionController = require("./../controllers/transactionController2");
 const router = express.Router();
 
+router.patch(
+  "/updateSelectedAccount",
+  authController.protect,
+  getMe,
+  updateSelectedAccount
+);
 router.get("/me", authController.protect, getMe, getUser);
 router.post("/signup", createAccount, authController.signup);
 router.post("/login", authController.login);
@@ -28,7 +35,8 @@ router.patch(
   authController.protect,
   authController.updatePassword
 );
-router.patch("/updateMe", authController.protect, updateMe);
+router.patch("/updateMe", authController.protect, getMe, updateMe);
+
 router.delete("/deleteMe", authController.protect, deleteMe);
 // router.post("/transfer", authController.protect, getMe, transfer)
 // router.post("/deposit", authController.protect, getMe, deposit)
@@ -37,7 +45,7 @@ router.route("/").get(authController.protect, getAllUsers).post(createUser);
 router
   .route("/:id")
   .get(getUser)
-  .patch(updateUser)
+  .patch(updateMe)
   .delete(
     authController.protect,
     authController.restrictTo("admin", "lead-guide"),
