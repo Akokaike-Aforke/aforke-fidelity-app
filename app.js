@@ -10,12 +10,37 @@ const AppError = require("./utils/appError");
 const globalErrorHandleer = require("./controllers/errorController");
 // const userRouter = require("./routes/userRouter");
 const userRouter = require("./routes/userRoutes2");
-const transactionRouter = require("./routes/transactionRouter")
-const accountRouter = require("./routes/accountRouter")
+const transactionRouter = require("./routes/transactionRouter");
+const accountRouter = require("./routes/accountRouter");
+const userController = require("./controllers/userController");
+const fs = require("fs");
 const app = express();
+
+// const multer = require("multer");
+// const uploadDir = "uploads";
+// if (!fs.existsSync(uploadDir)) {
+//   fs.mkdirSync(uploadDir);
+// }
+// const storage = multer.diskStorage({
+//   // destination: "uploads/", // Define where to store the uploaded files
+//   // destination: (req, file, cb) => cb(null, "./uploads"),
+//   destination: (req, file, cb) => cb(null, "./public/profileImages"),
+//   filename: function (req, file, cb) {
+//     cb(null, Date.now() + "--" + file.originalname);
+//   },
+// });
+// const upload = multer({ storage: storage });
+// const upload = multer({ dest: "uploads/" });
+
+
+
+
+
 
 //GLOBAL MIDDLEWARE
 //set security http headers
+// app.use("/images", express.static("images2"));
+app.use(express.static(`${__dirname}/public`));
 app.use(helmet());
 app.use(cors());
 const limiter = rateLimit({
@@ -49,7 +74,7 @@ app.use((req, res, next) => {
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/accounts", accountRouter);
-app.use("/api/v1/transactions", transactionRouter)
+app.use("/api/v1/transactions", transactionRouter);
 app.all("*", (req, res, next) => {
   next(new AppError(`cannot find ${req.originalUrl} on this server`, 404));
 });

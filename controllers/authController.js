@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 // const User = require("./../models/userModel");
 const User = require("./../models/userModel2");
 // const Account = require("./../models/accountModel")
-const Account = require("./../models/accountModel2")
+const Account = require("./../models/accountModel2");
 const AppError = require("./../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
 const sendEmail = require("./../utils/email");
@@ -52,7 +52,8 @@ exports.signup = catchAsync(async (req, res, next) => {
     pin: req.body.pin,
     pinConfirm: req.body.pinConfirm,
     passwordChangedAt: req.body.passwordChangedAt,
-    accounts:[account._id],
+    accounts: [account._id],
+    profilePhoto: ""
     // transactions: req.body.transactions
     // accounts: [
     //   // ...req.body.accounts,
@@ -64,7 +65,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     // ],
 
     // role: req.body.role,
-  })
+  });
   // if(!newUser){
   //     return next(new AppError("No user created", 404))
   // }
@@ -85,8 +86,8 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError("Incorrect username or password", 401));
   }
 
-    // user.accounts[0].clearedBalance = user.accounts[0].accountBalance - 1000;
-    console.log(user.accounts[0].clearedBalance)
+  // user.accounts[0].clearedBalance = user.accounts[0].accountBalance - 1000;
+  console.log(user.accounts[0].clearedBalance);
   createSendToken(user, 200, res);
 });
 

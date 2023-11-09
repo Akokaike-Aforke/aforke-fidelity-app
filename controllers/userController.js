@@ -101,11 +101,39 @@ exports.createUser = catchAsync(async (req, res, next) => {
   });
 });
 
+const multer = require("multer");
+
+const fileStorageEngine = multer.diskStorage({
+  destination: (req, file, cb) => {
+    return cb(null, "./public/profileImages");
+  },
+  filename: (req, file, cb) => {
+    return cb(null, Date.now() + "--" + file.originalname);
+  },
+});
+exports.uploadPhoto = multer({ storage: fileStorageEngine }).single(
+  "profilePhoto"
+);
+
 exports.updateMe = catchAsync(async (req, res, next) => {
-  const user = await User.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
+  // if (req.file) {
+  //   console.log(req.file.path);
+  //   res.send("file uploaded completely");
+  // }
+  // else
+  // res.send("file uploaded nonsense");
+  // // res.send("single file uploaded");
+  // console.log(req.file.path);
+  console.log(req.file.filename);
+  const filename = req.file.filename;
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
+    { profilePhoto: req.file.path },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
   if (!user) {
     return next(
       new AppError(`No user found with the id: ${req.params.id}`, 404)
@@ -116,6 +144,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     timeUpdated: req.timeDone,
     data: {
       user,
+      filename,
     },
   });
 });
@@ -157,131 +186,32 @@ exports.updateSelectedAccount = catchAsync(async (req, res, next) => {
   });
 });
 
-// exports.transfer = catchAsync(async (req, res, next) => {
-//   const { receiverUsername, transferAmount, pin, description } = req.body;
+// exports.uploadProfilePhoto = upload.single("profilePhoto", catchAsync(async (req, res, next) => {
+//   // Handle the uploaded file, save it to a user's profile
+//   // For example, if you have the user's ID in req.user.id:
+//   upload.single("profilePhoto");
+//   console.log(req.body);
+//   User.findByIdAndUpdate(req.user.id, { profilePhoto: req.file.path });
 
-//   const user = await User.findById(req.params.id);
-//   const receiver = await User.findOne({ username: receiverUsername });
-//   if (!user) {
-//     return next(
-//       new AppError(`No user found with this id: ${req.params.id}`, 404)
-//     );
-//   }
+//   res
+//     .status(200)
+//     .json({ message: "Profile photo uploaded and saved successfully" });
+// });
+// )
 
-//   if (!(await user.correctPasswordOrPin(pin, user.pin))) {
-//     return next(new AppError("Invalid pin", 400));
-//   }
+// const upload = multer({ dest: 'uploads/' }); // Configure multer to specify where to store the uploaded files
 
-//   if (!receiver || receiverUsername === user.username) {
-//     return next(
-//       new AppError(`No user found with this username: ${receiverUsername}`, 404)
-//     );
-//   }
-//   const { clearedBalance, transactions: userTransactions, balance } = user;
-//   if (balance < transferAmount || transferAmount > clearedBalance) {
-//     return res
-//       .status(400)
-//       .json({ status: "fail", message: "Insufficient balance" });
-//   }
-//   // user.balance -= transferAmount;
-//   // receiver.balance += transferAmount;
-//   const timeOfTransaction = new Date();
-//   const receiverDetails = {
-//     transferAmount,
-//     receiverUsername,
-//     receiverAccountNumber: receiver.accountNumber,
-//     timeOfTransaction,
-//     description,
-//     receiverName: receiver.fullname,
-//     transactionType: "debit",
-//     charges: transferAmount * 0.15,
-//   };
+// exports.uploadProfilePhoto = upload.single("profilePhoto", (req, res, next) => {
+//   // At this point, req.file will contain information about the uploaded file
 
-//   const senderDetails = {
-//     transferAmount,
-//     senderUsername: user.username,
-//     timeOfTransaction,
-//     description,
-//     senderName: user.fullname,
-//     transactionType: "credit",
-//   };
-//   user.transactions = [...user.transactions, receiverDetails];
-//   receiver.transactions = [...receiver.transactions, senderDetails];
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-//   await User.findByIdAndUpdate(
-//     user._id,
-//     { transactions: user.transactions, $inc: { balance: -transferAmount } },
-//     { new: true }
-//   );
-//   await User.findByIdAndUpdate(
-//     receiver._id,
-//     { transactions: receiver.transactions, $inc: { balance: transferAmount } },
-//     { new: true }
-//   );
-//   await session.commitTransaction();
-//   session.endSession();
-//   res.status(200).json({
-//     status: "success",
-//     message: `Transfer to ${receiverUsername} is successful`,
-//     data: {
-//       senderDetails,
-//       receiverDetails,
-//     },
+//   // Example: If you have the user's ID in req.user.id, you can update the user's profilePhoto
+//   User.findByIdAndUpdate(req.params.id, { profilePhoto: req.file.path }, (err, user) => {
+//     if (err) {
+//       // Handle any errors
+//       return res.status(500).json({ message: "Error saving profile photo" });
+//     }
+
+//     // Respond with a success message
+//     res.status(200).json({ message: "Profile photo uploaded and saved successfully" });
 //   });
 // });
-
-// exports.deposit = catchAsync(async (req, res, next) => {
-//   const user = await User.findById(req.params.id);
-//   const { amount, pin, description } = req.body;
-//   if (!user) {
-//     return next(new AppError(`No user found with this id: ${req.params.id}`));
-//   }
-//   // user.balance += amount;
-//   await User.findByIdAndUpdate(
-//     // const userNewbalance = User.findByIdAndUpdate(
-//     user._id,
-//     {
-//       transactions: [
-//         ...user.transactions,
-//         {
-//           transactionType: "deposit",
-//           depositAmount: amount,
-//           timeOfTransaction: new Date(),
-//         },
-//       ],
-//       $inc: { balance: amount },
-//     },
-//     { new: true, runValidators: true }
-//   );
-//   // await userNewbalance.refresh
-//   res.status(200).json({
-//     status: "success",
-//     data: {
-//       depositInfo: {
-//         transactionType: "deposit",
-//         depositAmount: amount,
-//         timeOfTransaction: new Date(),
-//         description,
-//       },
-//     },
-//   });
-// });
-
-// exports.createAccount = catchAsync(async (req, res, next)=>{
-//   const newAccount = Account.create({
-//     // accountNumber: req.body.accountNumber,
-//     bvn: req.body.bvn,
-//     accountType: req.body.accountType,
-//     transactions: [],
-//     clearedBalance: req.body.clearedBalance
-//   });
-//   req.body.account = newAccount;
-//   next();
-// })
-
-// // exports.getAccount = catchAsync(async (req, res, next) => {
-// //   const account = await Account.findById();
-// //   req.body.account = account;
-// //   next();
-// // })

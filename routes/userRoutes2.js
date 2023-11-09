@@ -13,10 +13,14 @@ const {
   getMe,
   transfer,
   deposit,
+  uploadPhoto
 } = require("./../controllers/userController");
 const { createAccount } = require("./../controllers/accountController");
 const authController = require("./../controllers/authController");
+// const images = require("./../images")
 // const transactionController = require("./../controllers/transactionController2");
+
+
 const router = express.Router();
 
 router.patch(
@@ -35,7 +39,13 @@ router.patch(
   authController.protect,
   authController.updatePassword
 );
-router.patch("/updateMe", authController.protect, getMe, updateMe);
+router.patch(
+  "/updateMe",
+  authController.protect,
+  getMe,
+  uploadPhoto,
+  updateMe
+);
 
 router.delete("/deleteMe", authController.protect, deleteMe);
 // router.post("/transfer", authController.protect, getMe, transfer)

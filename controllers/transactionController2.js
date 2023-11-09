@@ -19,38 +19,35 @@ exports.getAllTransactions = catchAsync(async (req, res, next) => {
 
 exports.getSpecifiedTransactions = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id);
-  console.log(req.body)
-  
+
   const { startDate, endDate, activity, clientUsername } = req.body;
-  let {selectedAccount} = req.body
-  if(!selectedAccount)
-  selectedAccount = user.selectedAccount;
+  let { selectedAccount } = req.body;
+  if (!selectedAccount) selectedAccount = user.selectedAccount;
   const transactions = user.accounts[selectedAccount].transactions;
 
   let specifiedTransactions = [...transactions];
-  if(startDate && endDate)
-  {
-  specifiedTransactions = transactions.filter((transaction) => {
-    return (
-      Number(
-        new Date(new Date(transaction.timeOfTransaction).toDateString())
-      ) >= Number(new Date(new Date(startDate).toDateString())) &&
-      Number(
-        new Date(new Date(transaction.timeOfTransaction).toDateString())
-      ) <= Number(new Date(new Date(endDate).toDateString()))
-    );
-  });
-}
-  
-  if(activity)
-  specifiedTransactions = specifiedTransactions.filter((transaction) => {
-    return transaction.type === activity;
-  })
+  if (startDate && endDate) {
+    specifiedTransactions = transactions.filter((transaction) => {
+      return (
+        Number(
+          new Date(new Date(transaction.timeOfTransaction).toDateString())
+        ) >= Number(new Date(new Date(startDate).toDateString())) &&
+        Number(
+          new Date(new Date(transaction.timeOfTransaction).toDateString())
+        ) <= Number(new Date(new Date(endDate).toDateString()))
+      );
+    });
+  }
 
-  if(clientUsername){
+  if (activity)
     specifiedTransactions = specifiedTransactions.filter((transaction) => {
-      return transaction.client === clientUsername
-    })
+      return transaction.type === activity;
+    });
+
+  if (clientUsername) {
+    specifiedTransactions = specifiedTransactions.filter((transaction) => {
+      return transaction.client === clientUsername;
+    });
   }
   res.status(200).json({
     status: "success",
@@ -60,7 +57,6 @@ exports.getSpecifiedTransactions = catchAsync(async (req, res, next) => {
     },
   });
 });
-
 
 exports.getMoreTransactions = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id);
