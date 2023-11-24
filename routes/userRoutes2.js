@@ -13,13 +13,12 @@ const {
   getMe,
   transfer,
   deposit,
-  uploadPhoto
+  uploadPhoto,
 } = require("./../controllers/userController");
 const { createAccount } = require("./../controllers/accountController");
 const authController = require("./../controllers/authController");
 // const images = require("./../images")
 // const transactionController = require("./../controllers/transactionController2");
-
 
 const router = express.Router();
 
@@ -34,22 +33,26 @@ router.post("/signup", createAccount, authController.signup);
 router.post("/login", authController.login);
 router.post("/forgotPassword", authController.forgotPassword);
 router.patch("/resetPassword/:token", authController.resetPassword);
+router.post(
+  "/forgotPin",
+  authController.protect,
+  getMe,
+  authController.forgotPin
+);
+router.patch("/resetPin/:token", authController.resetPin);
 router.patch(
   "/updateMyPassword",
   authController.protect,
   authController.updatePassword
 );
 router.patch(
-  "/updateMe",
+  "/updatePin",
   authController.protect,
-  getMe,
-  uploadPhoto,
-  updateMe
+  authController.updatePin
 );
+router.patch("/updateMe", authController.protect, getMe, uploadPhoto, updateMe);
 
 router.delete("/deleteMe", authController.protect, deleteMe);
-// router.post("/transfer", authController.protect, getMe, transfer)
-// router.post("/deposit", authController.protect, getMe, deposit)
 
 router.route("/").get(authController.protect, getAllUsers).post(createUser);
 router

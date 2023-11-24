@@ -116,24 +116,28 @@ exports.uploadPhoto = multer({ storage: fileStorageEngine }).single(
 );
 
 exports.updateMe = catchAsync(async (req, res, next) => {
-  // if (req.file) {
-  //   console.log(req.file.path);
-  //   res.send("file uploaded completely");
-  // }
-  // else
-  // res.send("file uploaded nonsense");
-  // // res.send("single file uploaded");
-  // console.log(req.file.path);
-  console.log(req.file.filename);
+  const {fullname} = req.body;
+  let user;
+  if(req?.file?.path){
   const filename = req.file.filename;
-  const user = await User.findByIdAndUpdate(
+  user = await User.findByIdAndUpdate(
     req.params.id,
     { profilePhoto: req.file.path },
     {
       new: true,
       runValidators: true,
     }
-  );
+  );}
+  if(fullname){
+    user = await User.findByIdAndUpdate(
+      req.params.id,
+      { fullname},
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+  }
   if (!user) {
     return next(
       new AppError(`No user found with the id: ${req.params.id}`, 404)
@@ -144,7 +148,6 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     timeUpdated: req.timeDone,
     data: {
       user,
-      filename,
     },
   });
 });
@@ -186,32 +189,3 @@ exports.updateSelectedAccount = catchAsync(async (req, res, next) => {
   });
 });
 
-// exports.uploadProfilePhoto = upload.single("profilePhoto", catchAsync(async (req, res, next) => {
-//   // Handle the uploaded file, save it to a user's profile
-//   // For example, if you have the user's ID in req.user.id:
-//   upload.single("profilePhoto");
-//   console.log(req.body);
-//   User.findByIdAndUpdate(req.user.id, { profilePhoto: req.file.path });
-
-//   res
-//     .status(200)
-//     .json({ message: "Profile photo uploaded and saved successfully" });
-// });
-// )
-
-// const upload = multer({ dest: 'uploads/' }); // Configure multer to specify where to store the uploaded files
-
-// exports.uploadProfilePhoto = upload.single("profilePhoto", (req, res, next) => {
-//   // At this point, req.file will contain information about the uploaded file
-
-//   // Example: If you have the user's ID in req.user.id, you can update the user's profilePhoto
-//   User.findByIdAndUpdate(req.params.id, { profilePhoto: req.file.path }, (err, user) => {
-//     if (err) {
-//       // Handle any errors
-//       return res.status(500).json({ message: "Error saving profile photo" });
-//     }
-
-//     // Respond with a success message
-//     res.status(200).json({ message: "Profile photo uploaded and saved successfully" });
-//   });
-// });

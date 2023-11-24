@@ -1,27 +1,22 @@
-const Transaction = require("./../models/transactionModel")
+const Transaction = require("./../models/transactionModel");
 const catchAsync = require("./../utils/catchAsync");
-const AppError = require("./../utils/appError")
-const User = require("./../models/userModel")
-const mongoose = require("mongoose")
-const Account = require("./../models/accountModel")
+const AppError = require("./../utils/appError");
+const User = require("./../models/userModel");
+const mongoose = require("mongoose");
+const Account = require("./../models/accountModel");
 exports.getAllTransactions = catchAsync(async (req, res, next) => {
-    const transactions = await Transaction.find()
-    res.status(200).json({
-        status: "success",
-        result: transactions.length,
-        data: {
-            transactions
-        }
-    })
-})
+  const transactions = await Transaction.find();
+  res.status(200).json({
+    status: "success",
+    result: transactions.length,
+    data: {
+      transactions,
+    },
+  });
+});
 
 exports.createTransaction = catchAsync(async (req, res, next) => {
-  const {
-    receiverUsername,
-    transactionAmount,
-    pin,
-    description,
-  } = req.body;
+  const { receiverUsername, transactionAmount, pin, description } = req.body;
   const sender = await User.findById(req.params.id);
   const receiver = await User.findOne({ username: receiverUsername });
 
@@ -32,7 +27,6 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
 
   const senderAccount = await Account.findById(sender.accounts[0]._id);
   const receiverAccount = await Account.findById(receiver.accounts[0]._id);
-
 
   if (!sender) {
     return next(
@@ -49,22 +43,19 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
       new AppError(`No user found with this username: ${receiverUsername}`, 404)
     );
   }
-  
-  if(!senderAccount){
-    return next(
-      new AppError("sender account not found", 404)
-    );
+
+  if (!senderAccount) {
+    return next(new AppError("sender account not found", 404));
   }
 
   if (!receiverAccount) {
     return next(new AppError("receiver account not found", 404));
   }
-  
 
   const { clearedBalance } = senderAccount;
   console.log(transactionAmount);
   console.log(clearedBalance);
-  console.log(senderAccount)
+  console.log(senderAccount);
   if (transactionAmount > clearedBalance || clearedBalance < 0) {
     return res
       .status(400)
@@ -72,7 +63,6 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
   }
   console.log(transactionAmount);
   console.log(clearedBalance);
-  
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -100,20 +90,25 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
     timeOfTransaction,
   });
 
-  const updatedSenderAccount = await Account.findByIdAndUpdate(sender.accounts[0]._id, {
-    $inc: { accountBalance: -transactionAmount },
-  });
-  const updatedReceiverAccount = await Account.findByIdAndUpdate(receiver.accounts[0]._id, {
-    $inc: { accountBalance: transactionAmount },
-  });
+  const updatedSenderAccount = await Account.findByIdAndUpdate(
+    sender.accounts[0]._id,
+    {
+      $inc: { accountBalance: -transactionAmount },
+    }
+  );
+  const updatedReceiverAccount = await Account.findByIdAndUpdate(
+    receiver.accounts[0]._id,
+    {
+      $inc: { accountBalance: transactionAmount },
+    }
+  );
 
   await User.findByIdAndUpdate(req.user.id, {
-    $inc: { accounts: { accountBalance: -transactionAmount }},
+    $inc: { accounts: { accountBalance: -transactionAmount } },
   });
   await User.findByIdAndUpdate(receiver.id, {
-    $inc: { accounts: { accountBalance: transactionAmount }},
+    $inc: { accounts: { accountBalance: transactionAmount } },
   });
- 
 
   await session.commitTransaction();
   session.endSession();
@@ -127,13 +122,22 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
   });
 });
 
-
 exports.deposit = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id);
-   req.body.accountOwner = req.user.id;
-   req.body.accountOwnerAccount = user.accounts[0]._id;
+  if (!user) {
+    return next(
+      new AppError(`No user found with this id: ${req.params.id}`, 404)
+    );
+  }
+  req.body.accountOwner = req.user.id;
+  req.body.accountOwnerAccount = user.accounts[0]._id;
 
-  const { transactionAmount, pin, description} = req.body;
+  const { transactionAmount, pin, description } = req.body;
+  console.log(!(await user.correctPasswordOrPin(pin, user.pin)));
+  if (!(await user.correctPasswordOrPin(pin, user.pin))) {
+    console.log("pin are the same")
+    // return next(new AppError("Invalid pin", 400));
+  }
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -141,7 +145,9 @@ exports.deposit = catchAsync(async (req, res, next) => {
   const updatedAccount = await Account.findByIdAndUpdate(user.accounts[0]._id, {
     $inc: { accountBalance: transactionAmount },
   });
-  User.findByIdAndUpdate(req.params.id, { $inc: { accounts: { accountBalance: transactionAmount }}})
+  User.findByIdAndUpdate(req.params.id, {
+    $inc: { accounts: { accountBalance: transactionAmount } },
+  });
   const deposit = await Transaction.create({
     receiverUsername: "self",
     transactionAmount,
@@ -156,13 +162,13 @@ exports.deposit = catchAsync(async (req, res, next) => {
 
   await session.commitTransaction();
   session.endSession();
-  
+
   res.status(200).json({
     status: "success",
     data: {
       transaction: {
-        deposit
-      }
+        deposit,
+      },
     },
   });
 });

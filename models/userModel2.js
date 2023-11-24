@@ -41,21 +41,29 @@ const user2Schema = new mongoose.Schema(
     },
     accounts: Array,
     selectedAccount: {
-        type: Number,
-        default: 0,
+      type: Number,
+      default: 0,
     },
     username: {
       type: String,
       required: [true, "a username is required"],
       unique: [true, "this username is already in use"],
     },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
     password: {
       type: String,
       required: [true, "password is required"],
+      select: false,
     },
     passwordConfirm: {
       type: String,
       required: [true, "Please confirm password"],
+
+      //custom validators only work on model.create() and model.save() not model.findByIdAndUpdate()
       validate: {
         validator: function (el) {
           return el === this.password;
@@ -69,11 +77,11 @@ const user2Schema = new mongoose.Schema(
     passwordResetExpires: Date,
     pin: {
       type: String,
-      required: [true, "pin is required"],
+      // required: [true, "pin is required"],
     },
     pinConfirm: {
       type: String,
-      required: [true, "Please confirm your pin"],
+      // required: [true, "Please confirm your pin"],
       validate: {
         validator: function (el) {
           return el === this.pin;
@@ -82,6 +90,8 @@ const user2Schema = new mongoose.Schema(
       },
     },
     pinChangedAt: Date,
+    pinResetToken: String,
+    pinResetExpires: Date,
     dateCreated: { type: Date, default: () => new Date() },
     active: {
       type: Boolean,
@@ -203,13 +213,6 @@ user2Schema.methods.changedPasswordAfter = function (JWTTimeStamp) {
 };
 
 user2Schema.methods.createPasswordResetToken = function () {
-  // const resetToken = crypto.randomBytes(32).toString("hex");
-  // this.passwordResetToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-  //  console.log({resetToken}, this.passwordResetToken)
-  // this.passwordResetExpires = Date.now() + (10 * 60 * 1000);
-  // return resetToken;
-
-  console.log("reset reset");
   const resetToken = crypto.randomBytes(32).toString("hex");
   this.passwordResetToken = crypto
     .createHash("sha256")
@@ -220,7 +223,16 @@ user2Schema.methods.createPasswordResetToken = function () {
   return resetToken;
 };
 
-
+user2Schema.methods.createPinResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  this.pinResetToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  this.pinResetExpires = Date.now() + 10 * 60 * 1000;
+  console.log({ resetToken }, this.pinResetToken);
+  return resetToken;
+};
 
 function generateUniqueBVN() {
   const min = 10000000000000; // Minimum 14-digit number

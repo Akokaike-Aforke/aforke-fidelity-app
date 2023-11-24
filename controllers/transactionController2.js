@@ -220,10 +220,18 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
 
 exports.deposit = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id);
+  if (!user) {
+    return next(
+      new AppError(`No user found with this id: ${req.params.id}`, 404)
+    );
+  }
   const selectedAccount = user.selectedAccount;
   const balance = user.accounts[selectedAccount].accountBalance;
   const timeOfTransaction = new Date();
   const { transactionAmount, pin, description } = req.body;
+  if (!(await user.correctPasswordOrPin(pin, user.pin))) {
+    return next(new AppError("Invalid pin", 400));
+  }
   const clientAccountNumber = user.accounts[selectedAccount].accountNumber;
   const clientFullname = user.fullname;
   const deposit = await Transaction2.create({
@@ -257,20 +265,6 @@ exports.deposit = catchAsync(async (req, res, next) => {
       },
     }
   );
-  // io.on("connect", (socket) => {
-  //   console.log("connected to nonsense");
-  //   // socket.on("updateBalance", ()=>{
-  //   //   console.log("nonsense io")
-  //   //   socket.emit("activate_deposit", {
-  //   //     updatedUser,
-  //   //     updatedAccount,
-  //   //   });
-  //   // })
-  //   // socket.emit("activate_deposit", {
-  //   //   updatedUser,
-  //   //   updatedAccount,
-  //   // });
-  // });
 
   res.status(200).json({
     status: "success",

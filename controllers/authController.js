@@ -22,7 +22,8 @@ const createSendToken = (user, statusCode, res) => {
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
     //    secure: true,
-    httpOnly: true,
+    httpOnly: false,
+    sameSite: "none",
   };
   if (process.env.NODE_ENV === "production") {
     cookieOptions.secure = true;
@@ -53,7 +54,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     pinConfirm: req.body.pinConfirm,
     passwordChangedAt: req.body.passwordChangedAt,
     accounts: [account._id],
-    profilePhoto: ""
+    profilePhoto: "",
     // transactions: req.body.transactions
     // accounts: [
     //   // ...req.body.accounts,
@@ -87,7 +88,6 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // user.accounts[0].clearedBalance = user.accounts[0].accountBalance - 1000;
-  console.log(user.accounts[0].clearedBalance);
   createSendToken(user, 200, res);
 });
 
@@ -99,6 +99,8 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith("Bearer")
   ) {
     token = req.headers.authorization.split(" ")[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
   }
   if (!token) {
     return next(
@@ -110,22 +112,50 @@ exports.protect = catchAsync(async (req, res, next) => {
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
   //3. check if user still exists
-  const freshUser = await User.findById(decoded.id);
-  if (!freshUser) {
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
     return next(
       new AppError("The user belonging to this token no longer exists", 401)
     );
   }
   //4. check if user changed password after the token was issued
-  if (freshUser.changedPasswordAfter(decoded.iat)) {
+  if (currentUser.changedPasswordAfter(decoded.iat)) {
     return next(
       new AppError("User recently changed password! Please log in again", 401)
     );
   }
 
-  req.user = freshUser;
+  req.user = currentUser;
 
   //grant access to protected route
+  next();
+});
+
+exports.isLoggedIn = catchAsync(async (req, res, next) => {
+  //1. get token and check if it's there
+  let token;
+  if (req.cookies.jwt) {
+    //2. verify token
+    const decoded = await promisify(jwt.verify)(
+      req.cookies.jwt,
+      process.env.JWT_SECRET
+    );
+
+    //3. check if user still exists
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return next();
+    }
+    //4. check if user changed password after the token was issued
+    if (currentUser.changedPasswordAfter(decoded.iat)) {
+      return next();
+    }
+
+    req.user = currentUser;
+
+    //grant access to protected route
+    next();
+  }
   next();
 });
 
@@ -151,16 +181,17 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   await user.save({ validateBeforeSave: false });
   //3. send to user's email
 
-  const resetURL = `${req.protocol}://${req.get(
-    "host"
-  )}/api/v1/users/resetPassword/${resetToken}`;
-  const message = `Forg2ot your password? Submit a PATCH request with your new password and password confirm to ${resetURL}.\nif you did not forget your password, please ignore this email`;
+  // const resetURL = `${req.protocol}://${req.get(
+  //   "host"
+  // )}/api/v1/users/resetPassword/${resetToken}`;
+  const resetURL = `http://127.0.0.1:5173/resetPassword/${resetToken}`;
+  const message = `Forgot your password? Submit a PATCH request with your new password and password confirm to ${resetURL}.\nif you did not forget your password, please ignore this email`;
   console.log(resetURL);
 
   try {
     await sendEmail({
       email: user.email,
-      subject: "Your password reset token(valid for 10 days)",
+      subject: "Your password reset token(valid for 10 minutes)",
       message,
     });
     res.status(200).json({
@@ -177,12 +208,15 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     );
   }
 });
+
 exports.resetPassword = catchAsync(async (req, res, next) => {
+  console.log(req.params.token);
   //1. get user based on token
   const hashedToken = crypto
     .createHash("sha256")
     .update(req.params.token)
     .digest("hex");
+
   const user = await User.findOne({
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
@@ -192,12 +226,16 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError("Token is invalid or has expired", 400));
   }
-
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
-  await user.save();
+
+  //added the next 2 lines so i can validate password and passwordConfirm only
+  await user.validate("password");
+  await user.validate("passwordConfirm");
+
+  await user.save({ validateBeforeSave: false });
 
   //3. update changedPasswordAt property for the current user(done at userSchema.pre("save", function(){......}))
 
@@ -209,13 +247,122 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   //1. get user from collection
   const user = await User.findById(req.user.id).select("+password");
   //2. check if posted current password is correct
-  if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
+  if (
+    !(await user.correctPasswordOrPin(req.body.passwordCurrent, user.password))
+  ) {
     return next(new AppError("Your current password is wrong", 401));
   }
   //3. if so, update password
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
-  await user.save();
+  await user.validate("password");
+  await user.validate("passwordConfirm")
+  await user.save({validateBeforeSave: false});
+  //4. log user in, send JWT
+  createSendToken(user, 200, res);
+});
+
+
+exports.forgotPin = catchAsync(async (req, res, next) => {
+  //1. get user based on posted email
+  // const user = await User.findOne({ email: req.body.email });
+  const user = await User.findById(req.params.id).select("+password");
+
+  if (!user) {
+    return next(new AppError("There is no user with this email address", 404));
+  }
+  
+  const { email, password } = req.body;
+  if(!email || !password || email !== user.email || !(await user.correctPasswordOrPin(password, user.password))){
+    return next(new AppError("Invalid email or password", 404));
+  }
+  //2. generate random reset token
+  const resetToken = user.createPinResetToken();
+  await user.save({ validateBeforeSave: false });
+  //3. send to user's email
+
+  // const resetURL = `${req.protocol}://${req.get(
+  //   "host"
+  // )}/api/v1/users/resetPin/${resetToken}`;
+  const resetURL = `http://127.0.0.1:5173/resetPin/${resetToken}`;
+  const message = `Forgot your pin? Submit a PATCH request with your new password and password confirm to ${resetURL}.\nif you did not forget your password, please ignore this email`;
+  console.log(resetURL);
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Your pin reset token(valid for 10 minutes)",
+      message,
+    });
+    res.status(200).json({
+      status: "success",
+      message: "token sent to email",
+    });
+  } catch (err) {
+    user.pinResetToken = undefined;
+    user.pinResetExpires = undefined;
+
+    await user.save({ validateBeforeSave: false });
+    return next(
+      new AppError("There was an error sending the email. Try again later", 500)
+    );
+  }
+});
+
+exports.resetPin = catchAsync(async (req, res, next) => {
+  console.log(req.params.token);
+  //1. get user based on token
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+
+  const user = await User.findOne({
+    pinResetToken: hashedToken,
+    pinResetExpires: { $gt: Date.now() },
+  });
+
+  //2. if token has not expired and there is still user, set the new password
+  if (!user) {
+    return next(new AppError("Token is invalid or has expired", 400));
+  }
+  user.pin = req.body.pin;
+  user.pinConfirm = req.body.pinConfirm;
+  user.pinResetToken = undefined;
+  user.pinResetExpires = undefined;
+
+  //added the next 2 lines so i can validate password and passwordConfirm only
+  await user.validate("pin");
+  await user.validate("pinConfirm");
+
+  await user.save({ validateBeforeSave: false });
+
+  //3. update changedPasswordAt property for the current user(done at userSchema.pre("save", function(){......}))
+
+  //4. log user in by sending JWT
+  createSendToken(user, 200, res);
+});
+
+
+exports.updatePin = catchAsync(async (req, res, next) => {
+  //1. get user from collection
+  const user = await User.findById(req.user.id).select("+pin +password");
+
+  if (!(await user.correctPasswordOrPin(req.body.password, user.password))) {
+    return next(new AppError("Your password is wrong", 401));
+  }
+  //2. check if posted current password is correct
+  if (
+    !(await user.correctPasswordOrPin(req.body.pinCurrent, user.pin))
+  ) {
+    return next(new AppError("Your current pin is wrong", 401));
+  }
+  //3. if so, update password
+  user.pin = req.body.pin;
+  user.pinConfirm = req.body.pinConfirm;
+  await user.validate("pin");
+  await user.validate("pinConfirm");
+  await user.save({ validateBeforeSave: false });
   //4. log user in, send JWT
   createSendToken(user, 200, res);
 });

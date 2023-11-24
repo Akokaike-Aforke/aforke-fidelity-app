@@ -3,7 +3,7 @@ const transferSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ["credit", "debit"],
+      enum: ["credit", "debit", "self transfer"],
     },
     charges: {
       type: Number,
