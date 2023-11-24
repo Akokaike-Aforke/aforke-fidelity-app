@@ -230,7 +230,6 @@ user2Schema.methods.createPinResetToken = function () {
     .update(resetToken)
     .digest("hex");
   this.pinResetExpires = Date.now() + 10 * 60 * 1000;
-  console.log({ resetToken }, this.pinResetToken);
   return resetToken;
 };
 

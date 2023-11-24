@@ -55,21 +55,7 @@ exports.signup = catchAsync(async (req, res, next) => {
     passwordChangedAt: req.body.passwordChangedAt,
     accounts: [account._id],
     profilePhoto: "",
-    // transactions: req.body.transactions
-    // accounts: [
-    //   // ...req.body.accounts,
-    //   {
-    //     accountType,
-    //     accountNumber,
-    //     bvn,
-    //   },
-    // ],
-
-    // role: req.body.role,
   });
-  // if(!newUser){
-  //     return next(new AppError("No user created", 404))
-  // }
   createSendToken(newUser, 201, res);
 });
 

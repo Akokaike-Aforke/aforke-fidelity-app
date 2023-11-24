@@ -45,11 +45,7 @@ router.patch(
   authController.protect,
   authController.updatePassword
 );
-router.patch(
-  "/updatePin",
-  authController.protect,
-  authController.updatePin
-);
+router.patch("/updatePin", authController.protect, authController.updatePin);
 router.patch("/updateMe", authController.protect, getMe, uploadPhoto, updateMe);
 
 router.delete("/deleteMe", authController.protect, deleteMe);
