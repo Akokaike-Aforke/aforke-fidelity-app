@@ -43,8 +43,9 @@ const app = express();
 // app.use("/images", express.static("images2"));
 app.use(express.static(`${__dirname}/public`));
 app.use(helmet());
-app.use(cors());
+// app.use(cors());
 // app.use(cors({ credentials: true, origin: "http://127.0.0.1:5173" }));
+app.use(cors({ credentials: true, origin: "https://aforke-bankify.netlify.app" }));
 const limiter = rateLimit({
   max: 1000,
   windowMs: 60 * 60 * 1000,
