@@ -297,11 +297,16 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   //3. if so, update password
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
+  try{
   await user.validate("password");
   await user.validate("passwordConfirm")
   await user.save({validateBeforeSave: false});
   //4. log user in, send JWT
-  createSendToken(user, 200, res);
+  createSendToken(user, 200, res);}
+  catch(err){
+    console.log(err);
+    res.status(400).json({status: "falil", message: err.message})
+  }
 });
 
 
