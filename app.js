@@ -41,6 +41,8 @@ const app = express();
 //GLOBAL MIDDLEWARE
 //set security http headers
 // app.use("/images", express.static("images2"));
+
+console.log(process.env.NODE_ENV)
 app.use(express.static(`${__dirname}/public`));
 app.use(helmet());
 // app.use(cors());
