@@ -45,7 +45,17 @@ app.use(express.static(`${__dirname}/public`));
 app.use(helmet());
 // app.use(cors());
 // app.use(cors({ credentials: true, origin: "http://127.0.0.1:5173" }));
-app.use(cors({ credentials: true, origin: "https://aforke-bankify.netlify.app" }));
+const corsOptions = {
+  origin: "https://aforke-bankify.netlify.app", // Replace with your Netlify frontend URL
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+// app.use(
+//   cors({ credentials: true, origin: "https://aforke-bankify.netlify.app" })
+// );
+
+app.use(cors(corsOptions));
 const limiter = rateLimit({
   max: 1000,
   windowMs: 60 * 60 * 1000,
@@ -68,7 +78,7 @@ app.use(hpp({ whitelist: ["duration", "ratingsQuantity", "ratingsAverage "] }));
 
 app.use((req, res, next) => {
   req.timeDone = new Date().toISOString();
-  console.log(req.timeDone)
+  console.log(req.timeDone);
   next();
 });
 // const getTimeCreated = app.use((req, res, next) => {

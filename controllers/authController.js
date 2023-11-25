@@ -20,7 +20,7 @@ const signToken = (id) => {
     { id },
     "this_is_why_it_is_very_important_to_go_to_the_mall_after_shopping_for_a_long_45_days_of_work",
     {
-      expiresIn: 90,
+      expiresIn: "90d",
     }
   );
 };
