@@ -232,7 +232,10 @@ exports.deposit = catchAsync(async (req, res, next) => {
   const { transactionAmount, pin, description } = req.body;
   if (!(await user.correctPasswordOrPin(pin, user.pin))) {
     // return next(new AppError("Invalid pin", 400));
-    return res.send("invalid pin");
+    return res.status(400).json({
+      status: "fail",
+      message: "invalid pin"
+    })
   }
   const clientAccountNumber = user.accounts[selectedAccount].accountNumber;
   const clientFullname = user.fullname;
