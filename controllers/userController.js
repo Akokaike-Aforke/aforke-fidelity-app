@@ -176,7 +176,7 @@ exports.uploadPhoto = multer({ storage: fileStorageEngine }).single(
 //USING CLOUDINARY TO UPLOAD PHOTO
 exports.updateMe = async (req, res, next) => {
   const { profilePhoto} = req.body;
-  console.log(profilePhoto)
+  console.log(`profilePhoto: ${profilePhoto}`)
   let user;
   try {
     if (profilePhoto) {
