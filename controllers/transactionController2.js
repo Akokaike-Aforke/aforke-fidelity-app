@@ -220,7 +220,7 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
 
 exports.deposit = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id);
-  console.log(user)
+  console.log(user);
   if (!user) {
     return next(
       new AppError(`No user found with this id: ${req.params.id}`, 404)
@@ -231,7 +231,8 @@ exports.deposit = catchAsync(async (req, res, next) => {
   const timeOfTransaction = new Date();
   const { transactionAmount, pin, description } = req.body;
   if (!(await user.correctPasswordOrPin(pin, user.pin))) {
-    return next(new AppError("Invalid pin", 400));
+    // return next(new AppError("Invalid pin", 400));
+    return res.send("invalid pin");
   }
   const clientAccountNumber = user.accounts[selectedAccount].accountNumber;
   const clientFullname = user.fullname;
@@ -266,7 +267,7 @@ exports.deposit = catchAsync(async (req, res, next) => {
       },
     }
   );
-  console.log("depositing2")
+  console.log("depositing2");
 
   res.status(200).json({
     status: "success",
