@@ -85,7 +85,6 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   //check if user exists and password is correct
-  try {
     const user = await User.findOne({ username }).select("+password");
     if (!user || !(await user.correctPasswordOrPin(password, user.password))) {
       // return next(new AppError("Incorrect username or password", 401));
@@ -94,10 +93,6 @@ exports.login = catchAsync(async (req, res, next) => {
         message: "Incorrect username or password",
       });
     }
-  } catch (err) {
-    console.log(err);
-    res.status(400).json({ status: "fail", message: err.message });
-  }
 
   // user.accounts[0].clearedBalance = user.accounts[0].accountBalance - 1000;
   createSendToken(user, 200, res);
