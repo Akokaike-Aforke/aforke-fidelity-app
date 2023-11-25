@@ -74,13 +74,21 @@ exports.login = catchAsync(async (req, res, next) => {
 
   //check if username and password exists
   if (!username || !password) {
-    return next(new AppError("Please provide username and password!", 400));
+    // return next(new AppError("Please provide username and password!", 400));
+    return res.status(400).json({
+      status: "fail",
+      message: "Please provide username and password!",
+    });
   }
 
   //check if user exists and password is correct
   const user = await User.findOne({ username }).select("+password");
   if (!user || !(await user.correctPasswordOrPin(password, user.password))) {
-    return next(new AppError("Incorrect username or password", 401));
+    // return next(new AppError("Incorrect username or password", 401));
+    return res.status(401).json({
+      status: "fail",
+      message: "Incorrect username or password",
+    });
   }
 
   // user.accounts[0].clearedBalance = user.accounts[0].accountBalance - 1000;
@@ -99,9 +107,14 @@ exports.protect = catchAsync(async (req, res, next) => {
     token = req.cookies.jwt;
   }
   if (!token) {
-    return next(
-      new AppError("You are not logged in! Please log in to get access", 401)
-    );
+    // return next(
+      // new AppError("You are not logged in! Please log in to get access", 401)
+      
+    // );
+    return res.status(401).json({
+      status: "fail",
+      message: "You are not logged in! Please log in to get access",
+    });
   }
 
   //2. verify token
@@ -114,15 +127,24 @@ exports.protect = catchAsync(async (req, res, next) => {
   //3. check if user still exists
   const currentUser = await User.findById(decoded.id);
   if (!currentUser) {
-    return next(
-      new AppError("The user belonging to this token no longer exists", 401)
-    );
+    // return next(
+      // new AppError("The user belonging to this token no longer exists", 401)
+    // );
+
+    return res.status(401).json({
+      status: "fail",
+      message: "The user belonging to this token no longer exists",
+    });
   }
   //4. check if user changed password after the token was issued
   if (currentUser.changedPasswordAfter(decoded.iat)) {
-    return next(
-      new AppError("User recently changed password! Please log in again", 401)
-    );
+    // return next(
+    //   new AppError("User recently changed password! Please log in again", 401)
+    // );
+    return res.status(401).json({
+      status: "fail",
+      message: "User recently changed password! Please log in again",
+    });
   }
 
   req.user = currentUser;
@@ -162,9 +184,13 @@ exports.isLoggedIn = catchAsync(async (req, res, next) => {
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return next(
-        new AppError("You do not have permission to perform this action", 403)
-      );
+      // return next(
+      //   new AppError("You do not have permission to perform this action", 403)
+      // );
+      return res.status(403).json({
+        status: "fail",
+        message: "You do not have permission to perform this action",
+      });
     }
     next();
   };
@@ -174,7 +200,11 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   //1. get user based on posted email
   const user = await User.findOne({ email: req.body.email });
   if (!user) {
-    return next(new AppError("There is no user with this email address", 404));
+    // return next(new AppError("There is no user with this email address", 404));
+    return res.status(404).json({
+      status: "fail",
+      message: "There is no user with this email address",
+    });
   }
   //2. generate random reset token
   const resetToken = user.createPasswordResetToken();
@@ -203,9 +233,13 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     user.passwordResetExpires = undefined;
 
     await user.save({ validateBeforeSave: false });
-    return next(
-      new AppError("There was an error sending the email. Try again later", 500)
-    );
+    // return next(
+    //   new AppError("There was an error sending the email. Try again later", 500)
+    // );
+    return res.status(500).json({
+      status: "error",
+      message: "There was an error sending the email. Try again later",
+    });
   }
 });
 
@@ -224,7 +258,11 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   //2. if token has not expired and there is still user, set the new password
   if (!user) {
-    return next(new AppError("Token is invalid or has expired", 400));
+    // return next(new AppError("Token is invalid or has expired", 400));
+    return res.status(400).json({
+      status: "fail",
+      message: "Token is invalid or has expired",
+    });
   }
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
@@ -250,7 +288,11 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   if (
     !(await user.correctPasswordOrPin(req.body.passwordCurrent, user.password))
   ) {
-    return next(new AppError("Your current password is wrong", 401));
+    // return next(new AppError("Your current password is wrong", 401));
+     return res.status(401).json({
+       status: "fail",
+       message: "Your current password is wrong",
+     });
   }
   //3. if so, update password
   user.password = req.body.password;
@@ -269,12 +311,20 @@ exports.forgotPin = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id).select("+password");
 
   if (!user) {
-    return next(new AppError("There is no user with this email address", 404));
+    // return next(new AppError("There is no user with this email address", 404));
+    return res.status(404).json({
+      status: "fail",
+      message: "There is no user with this email address",
+    });
   }
   
   const { email, password } = req.body;
   if(!email || !password || email !== user.email || !(await user.correctPasswordOrPin(password, user.password))){
-    return next(new AppError("Invalid email or password", 404));
+    // return next(new AppError("Invalid email or password", 404));
+    return res.status(404).json({
+      status: "fail",
+      message: "Invalid email or password",
+    });
   }
   //2. generate random reset token
   const resetToken = user.createPinResetToken();
@@ -303,9 +353,14 @@ exports.forgotPin = catchAsync(async (req, res, next) => {
     user.pinResetExpires = undefined;
 
     await user.save({ validateBeforeSave: false });
-    return next(
-      new AppError("There was an error sending the email. Try again later", 500)
-    );
+    // return next(
+    //   new AppError("There was an error sending the email. Try again later", 500)
+    // );
+
+     return res.status(500).json({
+       status: "error",
+       message: "There was an error sending the email. Try again later",
+     });
   }
 });
 
@@ -324,7 +379,11 @@ exports.resetPin = catchAsync(async (req, res, next) => {
 
   //2. if token has not expired and there is still user, set the new password
   if (!user) {
-    return next(new AppError("Token is invalid or has expired", 400));
+    // return next(new AppError("Token is invalid or has expired", 400));
+     return res.status(400).json({
+       status: "error",
+       message: "Token is invalid or has expired",
+     });
   }
   user.pin = req.body.pin;
   user.pinConfirm = req.body.pinConfirm;
@@ -349,13 +408,21 @@ exports.updatePin = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user.id).select("+pin +password");
 
   if (!(await user.correctPasswordOrPin(req.body.password, user.password))) {
-    return next(new AppError("Your password is wrong", 401));
+    // return next(new AppError("Your password is wrong", 401));
+     return res.status(401).json({
+       status: "fail",
+       message: "Your password is wrong",
+     });
   }
   //2. check if posted current password is correct
   if (
     !(await user.correctPasswordOrPin(req.body.pinCurrent, user.pin))
   ) {
-    return next(new AppError("Your current pin is wrong", 401));
+    // return next(new AppError("Your current pin is wrong", 401));
+    return res.status(401).json({
+      status: "fail",
+      message: "Your current pin is wrong",
+    });
   }
   //3. if so, update password
   user.pin = req.body.pin;

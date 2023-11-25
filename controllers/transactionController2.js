@@ -88,19 +88,31 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
   const receiver = await User.findOne({ username: receiverUsername });
 
   if (!sender) {
-    return next(
-      new AppError(`No user found with this id: ${req.params.id}`, 404)
-    );
+    // return next(
+      // new AppError(`No user found with this id: ${req.params.id}`, 404)
+    // );
+    return res.status(404).json({
+      status: "fail",
+      message: `No user found with this id: ${req.params.id}`,
+    });
   }
 
   if (!(await sender.correctPasswordOrPin(pin, sender.pin))) {
-    return next(new AppError("Invalid pin", 400));
+    // return next(new AppError("Invalid pin", 400));
+    return res.status(400).json({
+      status: "fail",
+      message: "Invalid pin",
+    });
   }
 
   if (!receiver || receiverUsername === sender.username) {
-    return next(
-      new AppError(`No user found with this username: ${receiverUsername}`, 404)
-    );
+    // return next(
+    //   new AppError(`No user found with this username: ${receiverUsername}`, 404)
+    // );
+    return res.status(404).json({
+      status: "fail",
+      message: `No user found with this username: ${receiverUsername}`,
+    });
   }
   const selectedAccountSender = sender.selectedAccount;
   const selectedAccountReceiver = receiver.selectedAccount;
@@ -222,9 +234,13 @@ exports.deposit = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id);
   console.log(user);
   if (!user) {
-    return next(
-      new AppError(`No user found with this id: ${req.params.id}`, 404)
-    );
+    // return next(
+    //   new AppError(`No user found with this id: ${req.params.id}`, 404)
+    // );
+    return res.status(404).json({
+      status: "fail",
+      message: `No user found with this is : ${req.params.id}`,
+    });
   }
   const selectedAccount = user.selectedAccount;
   const balance = user.accounts[selectedAccount].accountBalance;

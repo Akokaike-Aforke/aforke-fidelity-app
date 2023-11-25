@@ -40,12 +40,18 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
 exports.updateMe = catchAsync(async (req, res, next) => {
   //1. create error if user tries to post
   if (req.body.password || req.body.passwordConfirm) {
-    return next(
-      new AppError(
+    // return next(
+    //   new AppError(
+    //     "This route is not for password updates. Please use /updateMyPassword",
+    //     400
+    //   )
+    // );
+
+    return res.status(400).json({
+      status: "fail",
+      message:
         "This route is not for password updates. Please use /updateMyPassword",
-        400
-      )
-    );
+    });
   }
 
   //2. filtered out unwanted fields that are not allowed to be updated
@@ -75,9 +81,14 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
 exports.getUser = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id).populate("transactions");
   if (!user) {
-    return next(
-      new AppError(`No user found with the id: ${req.params.id}`, 404)
-    );
+    // return next(
+    //   new AppError(`No user found with the id: ${req.params.id}`, 404)
+    // );
+
+    return res.status(404).json({
+      status: "fail",
+      message: `No user found with the id: ${req.params.id}`,
+    });
   }
 
   // console.log(req.timeCreated);
@@ -116,22 +127,23 @@ exports.uploadPhoto = multer({ storage: fileStorageEngine }).single(
 );
 
 exports.updateMe = catchAsync(async (req, res, next) => {
-  const {fullname} = req.body;
+  const { fullname } = req.body;
   let user;
-  if(req?.file?.path){
-  const filename = req.file.filename;
-  user = await User.findByIdAndUpdate(
-    req.params.id,
-    { profilePhoto: req.file.path },
-    {
-      new: true,
-      runValidators: true,
-    }
-  );}
-  if(fullname){
+  if (req?.file?.path) {
+    const filename = req.file.filename;
     user = await User.findByIdAndUpdate(
       req.params.id,
-      { fullname},
+      { profilePhoto: req.file.path },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+  }
+  if (fullname) {
+    user = await User.findByIdAndUpdate(
+      req.params.id,
+      { fullname },
       {
         new: true,
         runValidators: true,
@@ -139,9 +151,14 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     );
   }
   if (!user) {
-    return next(
-      new AppError(`No user found with the id: ${req.params.id}`, 404)
-    );
+    // return next(
+    //   new AppError(`No user found with the id: ${req.params.id}`, 404)
+    // );
+
+    return res.status(404).json({
+      status: "fail",
+      message: `No user found with the id: ${req.params.id}`,
+    });
   }
   res.status(200).json({
     status: "success",
@@ -155,9 +172,14 @@ exports.updateMe = catchAsync(async (req, res, next) => {
 exports.deleteUser = catchAsync(async (req, res) => {
   const user = await User.findByIdAndDelete(req.params.id);
   if (!user) {
-    return next(
-      new AppError(`No tour found with the id: ${req.params.id}`, 404)
-    );
+    // return next(
+    //   new AppError(`No user found with the id: ${req.params.id}`, 404)
+    // );
+
+    return res.status(404).json({
+      status: "fail",
+      message: `No user found with the id: ${req.params.id}`,
+    });
   }
   res.status(204).json({
     status: "succes",
@@ -176,9 +198,13 @@ exports.updateSelectedAccount = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
   if (!user) {
-    return next(
-      new AppError(`No user found with the id: ${req.params.id}`, 404)
-    );
+    // return next(
+    //   new AppError(`No user found with the id: ${req.params.id}`, 404)
+    // );
+    return res.status(404).json({
+      status: "fail",
+      message: `No user found with the id: ${req.params.id}`,
+    });
   }
   res.status(200).json({
     status: "success",
@@ -188,4 +214,3 @@ exports.updateSelectedAccount = catchAsync(async (req, res, next) => {
     },
   });
 });
-
