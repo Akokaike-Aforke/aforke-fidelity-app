@@ -78,7 +78,6 @@ app.use(hpp({ whitelist: ["duration", "ratingsQuantity", "ratingsAverage "] }));
 
 app.use((req, res, next) => {
   req.timeDone = new Date().toISOString();
-  console.log(req.timeDone);
   next();
 });
 // const getTimeCreated = app.use((req, res, next) => {
