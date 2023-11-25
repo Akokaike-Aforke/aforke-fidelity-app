@@ -77,11 +77,11 @@ const user2Schema = new mongoose.Schema(
     passwordResetExpires: Date,
     pin: {
       type: String,
-      // required: [true, "pin is required"],
+      required: [true, "pin is required"],
     },
     pinConfirm: {
       type: String,
-      // required: [true, "Please confirm your pin"],
+      required: [true, "Please confirm your pin"],
       validate: {
         validator: function (el) {
           return el === this.pin;
