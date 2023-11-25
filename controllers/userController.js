@@ -175,11 +175,11 @@ exports.uploadPhoto = multer({ storage: fileStorageEngine }).single(
 
 //USING CLOUDINARY TO UPLOAD PHOTO
 exports.updateMe = async (req, res, next) => {
-  const { image} = req.body;
+  const { profilePhoto} = req.body;
   let user;
   try {
-    if (image) {
-      const uploadResponse = await cloudinary.uploader.upload(image, {
+    if (profilePhoto) {
+      const uploadResponse = await cloudinary.uploader.upload(profilePhoto, {
         upload_preset: "fidelityapp",
       });
       if (uploadResponse) {
