@@ -116,7 +116,8 @@ const multer = require("multer");
 
 const fileStorageEngine = multer.diskStorage({
   destination: (req, file, cb) => {
-    return cb(null, "./public/profileImages");
+    // return cb(null, "./public/profileImages");
+    return cb(null, "https://aforke-fidelity-app.onrender.com/public/profileImages");
   },
   filename: (req, file, cb) => {
     return cb(null, Date.now() + "--" + file.originalname);
