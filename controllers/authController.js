@@ -49,28 +49,30 @@ const createSendToken = (user, statusCode, res) => {
 };
 
 exports.signup = catchAsync(async (req, res, next) => {
-  const { accountNumber, accountType, bvn } = req.body;
-  
+  try {
+    const { accountNumber, accountType, bvn } = req.body;
+
     const account = await req.body.account;
-    try {
-      const newUser = await User.create({
-        fullname: req.body.fullname,
-        email: req.body.email,
-        username: req.body.username,
-        dateOfBirth: req.body.dateOfBirth,
-        password: req.body.password,
-        passwordConfirm: req.body.passwordConfirm,
-        pin: req.body.pin,
-        pinConfirm: req.body.pinConfirm,
-        passwordChangedAt: req.body.passwordChangedAt,
-        accounts: [account._id],
-        profilePhoto: "",
-      });
-    } catch (err) {
-      console.log(err);
-      res.status(400).json({ status: "fail", message: err.message });
-    }
-  createSendToken(newUser, 201, res);
+
+    const newUser = await User.create({
+      fullname: req.body.fullname,
+      email: req.body.email,
+      username: req.body.username,
+      dateOfBirth: req.body.dateOfBirth,
+      password: req.body.password,
+      passwordConfirm: req.body.passwordConfirm,
+      pin: req.body.pin,
+      pinConfirm: req.body.pinConfirm,
+      passwordChangedAt: req.body.passwordChangedAt,
+      accounts: [account._id],
+      profilePhoto: "",
+    });
+    createSendToken(newUser, 201, res);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+  
 });
 
 exports.login = catchAsync(async (req, res, next) => {
