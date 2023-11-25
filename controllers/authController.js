@@ -50,26 +50,26 @@ const createSendToken = (user, statusCode, res) => {
 
 exports.signup = catchAsync(async (req, res, next) => {
   const { accountNumber, accountType, bvn } = req.body;
-  const account = await req.body.account;
-  const newUser = await User.create({
-    fullname: req.body.fullname,
-    email: req.body.email,
-    username: req.body.username,
-    dateOfBirth: req.body.dateOfBirth,
-    password: req.body.password,
-    passwordConfirm: req.body.passwordConfirm,
-    pin: req.body.pin,
-    pinConfirm: req.body.pinConfirm,
-    passwordChangedAt: req.body.passwordChangedAt,
-    accounts: [account._id],
-    profilePhoto: "",
-  });
   try {
-    createSendToken(newUser, 201, res);
+    const account = await req.body.account;
+    const newUser = await User.create({
+      fullname: req.body.fullname,
+      email: req.body.email,
+      username: req.body.username,
+      dateOfBirth: req.body.dateOfBirth,
+      password: req.body.password,
+      passwordConfirm: req.body.passwordConfirm,
+      pin: req.body.pin,
+      pinConfirm: req.body.pinConfirm,
+      passwordChangedAt: req.body.passwordChangedAt,
+      accounts: [account._id],
+      profilePhoto: "",
+    });
   } catch (err) {
     console.log(err);
     res.status(400).json({ status: "fail", message: err.message });
   }
+  createSendToken(newUser, 201, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -85,22 +85,22 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   //check if user exists and password is correct
-  const user = await User.findOne({ username }).select("+password");
-  if (!user || !(await user.correctPasswordOrPin(password, user.password))) {
-    // return next(new AppError("Incorrect username or password", 401));
-    return res.status(401).json({
-      status: "fail",
-      message: "Incorrect username or password",
-    });
-  }
-
-  // user.accounts[0].clearedBalance = user.accounts[0].accountBalance - 1000;
   try {
-    createSendToken(user, 200, res);
+    const user = await User.findOne({ username }).select("+password");
+    if (!user || !(await user.correctPasswordOrPin(password, user.password))) {
+      // return next(new AppError("Incorrect username or password", 401));
+      return res.status(401).json({
+        status: "fail",
+        message: "Incorrect username or password",
+      });
+    }
   } catch (err) {
     console.log(err);
     res.status(400).json({ status: "fail", message: err.message });
   }
+
+  // user.accounts[0].clearedBalance = user.accounts[0].accountBalance - 1000;
+  createSendToken(user, 200, res);
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
