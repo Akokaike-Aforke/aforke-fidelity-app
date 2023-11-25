@@ -10,10 +10,17 @@ process.on("uncaughtException", (err) => {
 
 const app = require("./app");
 dotenv.config({ path: "./config.env" });
-const DB = process.env.DATABASE.replace(
-  "<PASSWORD>",
-  process.env.DATABASE_PASSWORD
-);
+// const DB = process.env.DATABASE.replace(
+//   "<PASSWORD>",
+//   process.env.DATABASE_PASSWORD
+// );
+
+const DB =
+  "mongodb+srv://lucykenneth54:<PASSWORD>@cluster0.nwfegzw.mongodb.net/bank-users?retryWrites=true&w=majority".replace(
+    "<PASSWORD>",
+    "6ZubCwnmDu1A6qRf"
+  );
+
 mongoose
   .connect(DB, {
     useNewUrlParser: true,
@@ -38,10 +45,6 @@ process.on("unhandledRejection", (err) => {
     process.exit(1);
   });
 });
-
-
-
-
 
 //TRIED WEBSOCKET
 //DID NOT WORK
