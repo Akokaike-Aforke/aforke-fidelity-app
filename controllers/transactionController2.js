@@ -220,6 +220,7 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
 
 exports.deposit = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id);
+  console.log(user)
   if (!user) {
     return next(
       new AppError(`No user found with this id: ${req.params.id}`, 404)
@@ -265,6 +266,7 @@ exports.deposit = catchAsync(async (req, res, next) => {
       },
     }
   );
+  console.log("depositing2")
 
   res.status(200).json({
     status: "success",
