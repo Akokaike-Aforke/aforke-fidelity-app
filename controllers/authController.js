@@ -28,9 +28,7 @@ const signToken = (id) => {
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
   const cookieOptions = {
-    expires: new Date(
-      Date.now() +  24 * 60 * 60 * 1000
-    ),
+    expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     //    secure: true,
     httpOnly: false,
     sameSite: "none",
@@ -66,7 +64,12 @@ exports.signup = catchAsync(async (req, res, next) => {
     accounts: [account._id],
     profilePhoto: "",
   });
-  createSendToken(newUser, 201, res);
+  try {
+    createSendToken(newUser, 201, res);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ status: "fail", message: err.message });
+  }
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -92,7 +95,12 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // user.accounts[0].clearedBalance = user.accounts[0].accountBalance - 1000;
-  createSendToken(user, 200, res);
+  try {
+    createSendToken(user, 200, res);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ status: "fail", message: err.message });
+  }
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -108,8 +116,8 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
   if (!token) {
     // return next(
-      // new AppError("You are not logged in! Please log in to get access", 401)
-      
+    // new AppError("You are not logged in! Please log in to get access", 401)
+
     // );
     return res.status(401).json({
       status: "fail",
@@ -128,7 +136,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   const currentUser = await User.findById(decoded.id);
   if (!currentUser) {
     // return next(
-      // new AppError("The user belonging to this token no longer exists", 401)
+    // new AppError("The user belonging to this token no longer exists", 401)
     // );
 
     return res.status(401).json({
@@ -269,16 +277,21 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
 
-  //added the next 2 lines so i can validate password and passwordConfirm only
-  await user.validate("password");
-  await user.validate("passwordConfirm");
+  try {
+    //added the next 2 lines so i can validate password and passwordConfirm only
+    await user.validate("password");
+    await user.validate("passwordConfirm");
 
-  await user.save({ validateBeforeSave: false });
+    await user.save({ validateBeforeSave: false });
 
-  //3. update changedPasswordAt property for the current user(done at userSchema.pre("save", function(){......}))
+    //3. update changedPasswordAt property for the current user(done at userSchema.pre("save", function(){......}))
 
-  //4. log user in by sending JWT
-  createSendToken(user, 200, res);
+    //4. log user in by sending JWT
+    createSendToken(user, 200, res);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ status: "fail", message: err.message });
+  }
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
@@ -289,26 +302,25 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
     !(await user.correctPasswordOrPin(req.body.passwordCurrent, user.password))
   ) {
     // return next(new AppError("Your current password is wrong", 401));
-     return res.status(401).json({
-       status: "fail",
-       message: "Your current password is wrong",
-     });
+    return res.status(401).json({
+      status: "fail",
+      message: "Your current password is wrong",
+    });
   }
   //3. if so, update password
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
-  try{
-  await user.validate("password");
-  await user.validate("passwordConfirm")
-  await user.save({validateBeforeSave: false});
-  //4. log user in, send JWT
-  createSendToken(user, 200, res);}
-  catch(err){
+  try {
+    await user.validate("password");
+    await user.validate("passwordConfirm");
+    await user.save({ validateBeforeSave: false });
+    //4. log user in, send JWT
+    createSendToken(user, 200, res);
+  } catch (err) {
     console.log(err);
-    res.status(400).json({status: "falil", message: err.message})
+    res.status(400).json({ status: "fail", message: err.message });
   }
 });
-
 
 exports.forgotPin = catchAsync(async (req, res, next) => {
   //1. get user based on posted email
@@ -322,9 +334,14 @@ exports.forgotPin = catchAsync(async (req, res, next) => {
       message: "There is no user with this email address",
     });
   }
-  
+
   const { email, password } = req.body;
-  if(!email || !password || email !== user.email || !(await user.correctPasswordOrPin(password, user.password))){
+  if (
+    !email ||
+    !password ||
+    email !== user.email ||
+    !(await user.correctPasswordOrPin(password, user.password))
+  ) {
     // return next(new AppError("Invalid email or password", 404));
     return res.status(404).json({
       status: "fail",
@@ -362,10 +379,10 @@ exports.forgotPin = catchAsync(async (req, res, next) => {
     //   new AppError("There was an error sending the email. Try again later", 500)
     // );
 
-     return res.status(500).json({
-       status: "error",
-       message: "There was an error sending the email. Try again later",
-     });
+    return res.status(500).json({
+      status: "error",
+      message: "There was an error sending the email. Try again later",
+    });
   }
 });
 
@@ -385,10 +402,10 @@ exports.resetPin = catchAsync(async (req, res, next) => {
   //2. if token has not expired and there is still user, set the new password
   if (!user) {
     // return next(new AppError("Token is invalid or has expired", 400));
-     return res.status(400).json({
-       status: "error",
-       message: "Token is invalid or has expired",
-     });
+    return res.status(400).json({
+      status: "error",
+      message: "Token is invalid or has expired",
+    });
   }
   user.pin = req.body.pin;
   user.pinConfirm = req.body.pinConfirm;
@@ -396,17 +413,21 @@ exports.resetPin = catchAsync(async (req, res, next) => {
   user.pinResetExpires = undefined;
 
   //added the next 2 lines so i can validate password and passwordConfirm only
-  await user.validate("pin");
-  await user.validate("pinConfirm");
+  try {
+    await user.validate("pin");
+    await user.validate("pinConfirm");
 
-  await user.save({ validateBeforeSave: false });
+    await user.save({ validateBeforeSave: false });
 
-  //3. update changedPasswordAt property for the current user(done at userSchema.pre("save", function(){......}))
+    //3. update changedPasswordAt property for the current user(done at userSchema.pre("save", function(){......}))
 
-  //4. log user in by sending JWT
-  createSendToken(user, 200, res);
+    //4. log user in by sending JWT
+    createSendToken(user, 200, res);
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ status: "fail", message: err.message });
+  }
 });
-
 
 exports.updatePin = catchAsync(async (req, res, next) => {
   //1. get user from collection
@@ -414,15 +435,13 @@ exports.updatePin = catchAsync(async (req, res, next) => {
 
   if (!(await user.correctPasswordOrPin(req.body.password, user.password))) {
     // return next(new AppError("Your password is wrong", 401));
-     return res.status(401).json({
-       status: "fail",
-       message: "Your password is wrong",
-     });
+    return res.status(401).json({
+      status: "fail",
+      message: "Your password is wrong",
+    });
   }
   //2. check if posted current password is correct
-  if (
-    !(await user.correctPasswordOrPin(req.body.pinCurrent, user.pin))
-  ) {
+  if (!(await user.correctPasswordOrPin(req.body.pinCurrent, user.pin))) {
     // return next(new AppError("Your current pin is wrong", 401));
     return res.status(401).json({
       status: "fail",
