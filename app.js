@@ -94,7 +94,11 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/accounts", accountRouter);
 app.use("/api/v1/transactions", transactionRouter);
 app.all("*", (req, res, next) => {
-  next(new AppError(`cannot find ${req.originalUrl} on this server`, 404));
+  // next(new AppError(`cannot find ${req.originalUrl} on this server`, 404));
+  return res.json(404).json({
+    status: "error",
+    message: `cannot find ${req.originalUrl} on this server`,
+  });
 });
 app.use(globalErrorHandleer);
 module.exports = app;
