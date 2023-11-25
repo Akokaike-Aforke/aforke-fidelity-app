@@ -76,6 +76,7 @@ exports.signup = catchAsync(async (req, res, next) => {
 });
 
 exports.login = catchAsync(async (req, res, next) => {
+  try{
   const { username, password } = req.body;
 
   //check if username and password exists
@@ -99,6 +100,11 @@ exports.login = catchAsync(async (req, res, next) => {
 
   // user.accounts[0].clearedBalance = user.accounts[0].accountBalance - 1000;
   createSendToken(user, 200, res);
+  }
+  catch(err){
+    console.log(err)
+    res.status(400).json({ status: "fail", message: err.message });
+  }
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
