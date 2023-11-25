@@ -5,6 +5,7 @@ const Account = require("./../models/accountModel2");
 const AppError = require("./../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
 const mongoose = require("mongoose");
+const cloudinary = require("./../utils/cloudinary")
 
 // exports.getAllUsers = catchAsync(async (req, res, next) =>{
 //         const users = await User.find();
@@ -127,48 +128,86 @@ exports.uploadPhoto = multer({ storage: fileStorageEngine }).single(
   "profilePhoto"
 );
 
-exports.updateMe = catchAsync(async (req, res, next) => {
-  const { fullname } = req.body;
-  let user;
-  if (req?.file?.path) {
-    const filename = req.file.filename;
-    user = await User.findByIdAndUpdate(
-      req.params.id,
-      { profilePhoto: req.file.path },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-  }
-  if (fullname) {
-    user = await User.findByIdAndUpdate(
-      req.params.id,
-      { fullname },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-  }
-  if (!user) {
-    // return next(
-    //   new AppError(`No user found with the id: ${req.params.id}`, 404)
-    // );
+// exports.updateMe = catchAsync(async (req, res, next) => {
+//   const { fullname } = req.body;
+//   let user;
+//   if (req?.file?.path) {
+//     const filename = req.file.filename;
+//     user = await User.findByIdAndUpdate(
+//       req.params.id,
+//       { profilePhoto: req.file.path },
+//       {
+//         new: true,
+//         runValidators: true,
+//       }
+//     );
+//   }
+//   if (fullname) {
+//     user = await User.findByIdAndUpdate(
+//       req.params.id,
+//       { fullname },
+//       {
+//         new: true,
+//         runValidators: true,
+//       }
+//     );
+//   }
+//   if (!user) {
+//     // return next(
+//     //   new AppError(`No user found with the id: ${req.params.id}`, 404)
+//     // );
 
-    return res.status(404).json({
-      status: "fail",
-      message: `No user found with the id: ${req.params.id}`,
-    });
+//     return res.status(404).json({
+//       status: "fail",
+//       message: `No user found with the id: ${req.params.id}`,
+//     });
+//   }
+//   res.status(200).json({
+//     status: "success",
+//     timeUpdated: req.timeDone,
+//     data: {
+//       user,
+//     },
+//   });
+// });
+
+
+
+//USING CLOUDINARY TO UPLOAD PHOTO
+exports.updateMe = async (req, res, next) => {
+  const { image} = req.body;
+  let user;
+  try {
+    if (image) {
+      const uploadResponse = await cloudinary.uploader.upload(image, {
+        upload_preset: "fidelityapp",
+      });
+      if (uploadResponse) {
+        user = await User.findByIdAndUpdate(
+          req.params.id,
+          { profilePhoto: uploadResponse },
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
+      }
+    }
+      res.status(200).json({
+        status: "success",
+        timeUpdated: req.timeDone,
+        data: {
+          user,
+        },
+      });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      status: "error",
+      message: "error uploading profile photo"
+    })
   }
-  res.status(200).json({
-    status: "success",
-    timeUpdated: req.timeDone,
-    data: {
-      user,
-    },
-  });
-});
+  }
 
 exports.deleteUser = catchAsync(async (req, res) => {
   const user = await User.findByIdAndDelete(req.params.id);
