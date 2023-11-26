@@ -42,11 +42,11 @@ const app = express();
 //set security http headers
 // app.use("/images", express.static("images2"));
 
-console.log(process.env.NODE_ENV)
+console.log(process.env.NODE_ENV);
 app.use(express.static(`${__dirname}/public`));
 app.use(helmet());
 // app.use(cors());
-app.use(cors({ credentials: true, origin: "http://127.0.0.1:5173" }));
+// app.use(cors({ credentials: true, origin: "http://127.0.0.1:5173" }));
 const corsOptions = {
   origin: "https://aforke-bankify.netlify.app", // Replace with your Netlify frontend URL
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
@@ -57,7 +57,7 @@ const corsOptions = {
 //   cors({ credentials: true, origin: "https://aforke-bankify.netlify.app" })
 // );
 
-// app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 const limiter = rateLimit({
   max: 1000,
   windowMs: 60 * 60 * 1000,
