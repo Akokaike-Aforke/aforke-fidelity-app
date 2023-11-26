@@ -188,7 +188,7 @@ exports.updateMe = async (req, res, next) => {
         consol.log(uploadResponse)
         user = await User.findByIdAndUpdate(
           req.params.id,
-          { profilePhoto: uploadResponse },
+          { profilePhoto: "profilesssss" },
           {
             new: true,
             runValidators: true,
