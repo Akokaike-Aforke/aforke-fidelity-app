@@ -68,7 +68,8 @@ const limiter = rateLimit({
 app.use("/api", limiter);
 
 //body parser, reading data from the body into req.body
-app.use(express.json({ limit: "10kb" }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
 //data sanitization against noSQL query injection
