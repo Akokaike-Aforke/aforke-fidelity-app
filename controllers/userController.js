@@ -175,6 +175,7 @@ exports.uploadPhoto = multer({ storage: fileStorageEngine }).single(
 
 //USING CLOUDINARY TO UPLOAD PHOTO
 exports.updateMe = async (req, res, next) => {
+  console.log("cloudinary")
   const { profilePhoto} = req.body;
   console.log(`profilePhoto: ${profilePhoto}`)
   let user;
