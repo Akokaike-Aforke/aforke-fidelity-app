@@ -185,6 +185,7 @@ exports.updateMe = async (req, res, next) => {
         upload_preset: "fidelityapp",
       });
       if (uploadResponse) {
+        consol.log(uploadResponse)
         user = await User.findByIdAndUpdate(
           req.params.id,
           { profilePhoto: uploadResponse },
