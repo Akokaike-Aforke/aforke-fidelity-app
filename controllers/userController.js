@@ -185,7 +185,7 @@ exports.updateMe = async (req, res, next) => {
   const { profilePhoto } = req.body;
   console.log(req.body);
   console.log(`profilePhoto: ${profilePhoto}`);
-  console.log(process.env.CLOUDINARY_API_KEY)
+  console.log(process.env.CLOUDINARY_API_KEY);
   let user;
   try {
     if (profilePhoto) {
