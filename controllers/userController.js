@@ -5,7 +5,7 @@ const Account = require("./../models/accountModel2");
 const AppError = require("./../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
 const mongoose = require("mongoose");
-const cloudinary = require("./../utils/cloudinary")
+const cloudinary = require("./../utils/cloudinary");
 
 // exports.getAllUsers = catchAsync(async (req, res, next) =>{
 //         const users = await User.find();
@@ -118,7 +118,10 @@ const multer = require("multer");
 const fileStorageEngine = multer.diskStorage({
   destination: (req, file, cb) => {
     // return cb(null, "./public/profileImages");
-    return cb(null, "https://aforke-fidelity-app.onrender.com/public/profileImages");
+    return cb(
+      null,
+      "https://aforke-fidelity-app.onrender.com/public/profileImages"
+    );
   },
   filename: (req, file, cb) => {
     return cb(null, Date.now() + "--" + file.originalname);
@@ -127,6 +130,11 @@ const fileStorageEngine = multer.diskStorage({
 exports.uploadPhoto = multer({ storage: fileStorageEngine }).single(
   "profilePhoto"
 );
+
+exports.getMe = (req, res, next) => {
+  req.params.id = req.user.id;
+  next();
+};
 
 // exports.updateMe = catchAsync(async (req, res, next) => {
 //   const { fullname } = req.body;
@@ -171,13 +179,12 @@ exports.uploadPhoto = multer({ storage: fileStorageEngine }).single(
 //   });
 // });
 
-
-
 //USING CLOUDINARY TO UPLOAD PHOTO
 exports.updateMe = async (req, res, next) => {
-  console.log("cloudinary")
-  const { profilePhoto} = req.body;
-  console.log(`profilePhoto: ${profilePhoto}`)
+  console.log("cloudinary");
+  const { profilePhoto } = req.body;
+  console.log(req.body);
+  console.log(`profilePhoto: ${profilePhoto}`);
   let user;
   try {
     if (profilePhoto) {
@@ -185,7 +192,7 @@ exports.updateMe = async (req, res, next) => {
         upload_preset: "fidelityapp",
       });
       if (uploadResponse) {
-        consol.log(uploadResponse)
+        consol.log(uploadResponse);
         user = await User.findByIdAndUpdate(
           req.params.id,
           { profilePhoto: "profilesssss" },
@@ -196,21 +203,21 @@ exports.updateMe = async (req, res, next) => {
         );
       }
     }
-      res.status(200).json({
-        status: "success",
-        timeUpdated: req.timeDone,
-        data: {
-          user,
-        },
-      });
+    res.status(200).json({
+      status: "success",
+      timeUpdated: req.timeDone,
+      data: {
+        user,
+      },
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({
       status: "error",
-      message: "error uploading profile photo"
-    })
+      message: "error uploading profile photo",
+    });
   }
-  }
+};
 
 exports.deleteUser = catchAsync(async (req, res) => {
   const user = await User.findByIdAndDelete(req.params.id);
@@ -229,11 +236,6 @@ exports.deleteUser = catchAsync(async (req, res) => {
     data: null,
   });
 });
-
-exports.getMe = (req, res, next) => {
-  req.params.id = req.user.id;
-  next();
-};
 
 exports.updateSelectedAccount = catchAsync(async (req, res, next) => {
   const user = await User.findByIdAndUpdate(req.params.id, req.body, {
