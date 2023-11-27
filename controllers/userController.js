@@ -6,6 +6,10 @@ const AppError = require("./../utils/appError");
 const catchAsync = require("./../utils/catchAsync");
 const mongoose = require("mongoose");
 const cloudinary = require("./../utils/cloudinary");
+const multer = require("multer");
+const path = require("path");
+const DatauriParser = require("datauri/parser");
+const parser = new DatauriParser();
 
 // exports.getAllUsers = catchAsync(async (req, res, next) =>{
 //         const users = await User.find();
@@ -113,30 +117,91 @@ exports.createUser = catchAsync(async (req, res, next) => {
   });
 });
 
-const multer = require("multer");
+// const fileStorageEngine = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     // return cb(null, "./public/profileImages");
+//     return cb(
+//       null,
+//       "https://aforke-fidelity-app.onrender.com/public/profileImages"
+//     );
+//   },
+//   filename: (req, file, cb) => {
+//     return cb(null, Date.now() + "--" + file.originalname);
+//   },
+// });
 
-const fileStorageEngine = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // return cb(null, "./public/profileImages");
-    return cb(
-      null,
-      "https://aforke-fidelity-app.onrender.com/public/profileImages"
-    );
-  },
-  filename: (req, file, cb) => {
-    return cb(null, Date.now() + "--" + file.originalname);
-  },
-});
-exports.uploadPhoto = multer({ storage: fileStorageEngine }).single(
+// exports.uploadPhoto = multer({ storage: fileStorageEngine }).single("profilePhoto");
+exports.uploadPhoto = multer({ storage: multer.memoryStorage() }).single(
   "profilePhoto"
 );
+
+const formatBufferTo64 = (file) =>
+  parser.format(path.extname(file.originalname).toString(), file.buffer);
+const cloudinaryUpload = (file) => cloudinary.uploader.upload(file);
 
 exports.getMe = (req, res, next) => {
   req.params.id = req.user.id;
   next();
 };
 
+//MEMORY STORAGE MULTER
+exports.updateMe = catchAsync(async (req, res, next) => {
+  const { fullname } = req.body;
+  let user;
+  try {
+    if (req?.file) {
+      const file64 = formatBufferTo64(req.file);
+      const uploadResult = await cloudinary.uploader
+        .upload(file64.content)
+        .catch((error) => {
+          console.error("Error uploading to Cloudinary:", error);
+          throw error; // Rethrow the error to be caught in the outer catch block
+        });
+      user = await User.findByIdAndUpdate(
+        req.params.id,
+        { profilePhoto: uploadResult.secure_url },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+      return res.json({
+        cloudinaryId: uploadResult.public_id,
+        url: uploadResult.secure_url,
+      });
+    }
+    if (fullname) {
+      user = await User.findByIdAndUpdate(
+        req.params.id,
+        { fullname },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+      res.status(200).json({
+        status: "success",
+        timeUpdated: req.timeDone,
+        data: {
+          user,
+        },
+      });
+    }
+    if (!user) {
+      return res.status(404).json({
+        status: "fail",
+        message: `No user found with the id: ${req.params.id}`,
+      });
+    }
+  } catch (e) {
+    return res.status(422).send({ message: e.message });
+  }
+});
+
+//DISK STORAGE MULTER
 // exports.updateMe = catchAsync(async (req, res, next) => {
+//   console.log(req?.file)
 //   const { fullname } = req.body;
 //   let user;
 //   if (req?.file?.path) {
@@ -179,46 +244,47 @@ exports.getMe = (req, res, next) => {
 //   });
 // });
 
-//USING CLOUDINARY TO UPLOAD PHOTO
-exports.updateMe = async (req, res, next) => {
-  console.log("cloudinary");
-  const { profilePhoto } = req.body;
-  console.log(req.body);
-  console.log(`profilePhoto: ${profilePhoto}`);
-  console.log(process.env.CLOUDINARY_API_KEY);
-  let user;
-  try {
-    if (profilePhoto) {
-      const uploadResponse = await cloudinary.uploader.upload(profilePhoto, {
-        upload_preset: "fidelityapp",
-      });
-      if (uploadResponse) {
-        consol.log(uploadResponse);
-        user = await User.findByIdAndUpdate(
-          req.params.id,
-          { profilePhoto: "profilesssss" },
-          {
-            new: true,
-            runValidators: true,
-          }
-        );
-      }
-    }
-    res.status(200).json({
-      status: "success",
-      timeUpdated: req.timeDone,
-      data: {
-        user,
-      },
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      status: "error",
-      message: "error uploading profile photo",
-    });
-  }
-};
+// //USING CLOUDINARY TO UPLOAD PHOTO
+// exports.updateMe = async (req, res, next) => {
+//   // console.log("cloudinary");
+//   // const { profilePhoto } = req.body;
+//   // console.log(req.body);
+//   // console.log(`profilePhoto: ${profilePhoto}`);
+//   // console.log(process.env.CLOUDINARY_API_KEY);
+//   console.log(req?.file)
+//   let user;
+//   try {
+//     if (req?.file) {
+//       const uploadResponse = await cloudinary.uploader.upload(profilePhoto, {
+//         upload_preset: "fidelityapp",
+//       });
+//       if (uploadResponse) {
+//         consol.log(uploadResponse);
+//         user = await User.findByIdAndUpdate(
+//           req.params.id,
+//           { profilePhoto: "profilesssss" },
+//           {
+//             new: true,
+//             runValidators: true,
+//           }
+//         );
+//       }
+//     }
+//     res.status(200).json({
+//       status: "success",
+//       timeUpdated: req.timeDone,
+//       data: {
+//         user,
+//       },
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({
+//       status: "error",
+//       message: "error uploading profile photo",
+//     });
+//   }
+// };
 
 exports.deleteUser = catchAsync(async (req, res) => {
   const user = await User.findByIdAndDelete(req.params.id);
