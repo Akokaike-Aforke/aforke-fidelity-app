@@ -21,6 +21,7 @@ const user2Schema = new mongoose.Schema(
           "A user name must contain greater than 2 and less than 3 words",
       },
       lowercase: true,
+      trim: true,
     },
     dateOfBirth: {
       type: Date,
@@ -32,6 +33,7 @@ const user2Schema = new mongoose.Schema(
       validate: [validator.isEmail, "Please provide a valid email"],
       unique: [true, "this email is already in use"],
       lowercase: true,
+      trim: true,
     },
     bvn: {
       type: String,
@@ -48,6 +50,8 @@ const user2Schema = new mongoose.Schema(
       type: String,
       required: [true, "a username is required"],
       unique: [true, "this username is already in use"],
+      lowercase: true,
+      trim: true
     },
     role: {
       type: String,
@@ -58,6 +62,7 @@ const user2Schema = new mongoose.Schema(
       type: String,
       required: [true, "password is required"],
       select: false,
+      trim: true,
     },
     passwordConfirm: {
       type: String,
@@ -70,6 +75,7 @@ const user2Schema = new mongoose.Schema(
         },
         message: "Passwords are not the same",
       },
+      trim: true,
     },
     profilePhoto: String,
     passwordChangedAt: Date,
@@ -78,6 +84,7 @@ const user2Schema = new mongoose.Schema(
     pin: {
       type: String,
       required: [true, "pin is required"],
+      trim: true,
     },
     pinConfirm: {
       type: String,
@@ -88,6 +95,7 @@ const user2Schema = new mongoose.Schema(
         },
         message: "Pins are not the same",
       },
+      trim: true,
     },
     pinChangedAt: Date,
     pinResetToken: String,
