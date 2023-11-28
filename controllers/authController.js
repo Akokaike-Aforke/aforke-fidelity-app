@@ -352,7 +352,8 @@ exports.forgotPin = catchAsync(async (req, res, next) => {
   // const resetURL = `${req.protocol}://${req.get(
   //   "host"
   // )}/api/v1/users/resetPin/${resetToken}`;
-  const resetURL = `http://127.0.0.1:5173/resetPin/${resetToken}`;
+  // const resetURL = `http://127.0.0.1:5173/resetPin/${resetToken}`;
+  const resetURL = `https://aforke-fidelity-app.onrender.com/resetPin/${resetToken}`;
   const message = `Forgot your pin? Submit a PATCH request with your new password and password confirm to ${resetURL}.\nif you did not forget your password, please ignore this email`;
   console.log(resetURL);
 
