@@ -218,7 +218,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   //   "host"
   // )}/api/v1/users/resetPassword/${resetToken}`;
   // const resetURL = `http://127.0.0.1:5173/resetPassword/${resetToken}`;
-  const resetURL = `https://aforke-fidelity-app.onrender.com/resetPassword/${resetToken}`;
+  const resetURL = `https://aforke-bankify.netlify.app/resetPassword/${resetToken}`;
   const message = `Forgot your password? Submit a PATCH request with your new password and password confirm to ${resetURL}.\nif you did not forget your password, please ignore this email`;
   console.log(resetURL);
 
@@ -353,7 +353,7 @@ exports.forgotPin = catchAsync(async (req, res, next) => {
   //   "host"
   // )}/api/v1/users/resetPin/${resetToken}`;
   // const resetURL = `http://127.0.0.1:5173/resetPin/${resetToken}`;
-  const resetURL = `https://aforke-fidelity-app.onrender.com/resetPin/${resetToken}`;
+  const resetURL = `https://aforke-bankify.netlify.app/resetPin/${resetToken}`;
   const message = `Forgot your pin? Submit a PATCH request with your new password and password confirm to ${resetURL}.\nif you did not forget your password, please ignore this email`;
   console.log(resetURL);
 
