@@ -15,6 +15,7 @@ const userRouter = require("./routes/userRoutes2");
 const transactionRouter = require("./routes/transactionRouter");
 const accountRouter = require("./routes/accountRouter");
 const userController = require("./controllers/userController");
+const reviewRouter = require("./routes/reviewRouter")
 const fs = require("fs");
 const app = express();
 
@@ -65,7 +66,7 @@ const limiter = rateLimit({
 });
 
 //limit requests
-app.use("/api", limiter);
+// app.use("/api", limiter);
 
 //body parser, reading data from the body into req.body
 app.use(express.json({ limit: "25mb" }));
@@ -94,6 +95,7 @@ app.get("/", (req, res) => {
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/accounts", accountRouter);
 app.use("/api/v1/transactions", transactionRouter);
+app.use("/api/v1/reviews", reviewRouter)
 app.all("*", (req, res, next) => {
   // next(new AppError(`cannot find ${req.originalUrl} on this server`, 404));
   return res.json(404).json({

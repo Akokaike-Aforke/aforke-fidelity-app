@@ -89,7 +89,7 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
 
   if (!sender) {
     // return next(
-      // new AppError(`No user found with this id: ${req.params.id}`, 404)
+    // new AppError(`No user found with this id: ${req.params.id}`, 404)
     // );
     return res.status(404).json({
       status: "fail",
@@ -250,8 +250,8 @@ exports.deposit = catchAsync(async (req, res, next) => {
     // return next(new AppError("Invalid pin", 400));
     return res.status(400).json({
       status: "fail",
-      message: "invalid pin"
-    })
+      message: "invalid pin",
+    });
   }
   const clientAccountNumber = user.accounts[selectedAccount].accountNumber;
   const clientFullname = user.fullname;

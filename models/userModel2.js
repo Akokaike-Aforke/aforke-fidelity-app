@@ -122,6 +122,13 @@ const user2Schema = new mongoose.Schema(
   }
 );
 
+
+user2Schema.virtual("reviews", {
+  ref: "Review",
+  localField: "_id",
+  foreignField: "createdBy"
+})
+
 // user2Schema.virtual("accounts.clearedBalance").get(function () {
 //   return this.accounts.accountBalance - 1000;
 // });

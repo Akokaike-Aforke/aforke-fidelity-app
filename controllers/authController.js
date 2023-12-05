@@ -15,7 +15,6 @@ const signToken = (id) => {
   });
 };
 
-
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
   const cookieOptions = {
@@ -63,23 +62,22 @@ exports.signup = catchAsync(async (req, res, next) => {
     console.log(err);
     res.status(400).json({ status: "fail", message: err.message });
   }
-  
 });
 
 exports.login = catchAsync(async (req, res, next) => {
-  try{
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  //check if username and password exists
-  if (!username || !password) {
-    // return next(new AppError("Please provide username and password!", 400));
-    return res.status(400).json({
-      status: "fail",
-      message: "Please provide username and password!",
-    });
-  }
+    //check if username and password exists
+    if (!username || !password) {
+      // return next(new AppError("Please provide username and password!", 400));
+      return res.status(400).json({
+        status: "fail",
+        message: "Please provide username and password!",
+      });
+    }
 
-  //check if user exists and password is correct
+    //check if user exists and password is correct
     const user = await User.findOne({ username }).select("+password");
     if (!user || !(await user.correctPasswordOrPin(password, user.password))) {
       // return next(new AppError("Incorrect username or password", 401));
@@ -89,11 +87,10 @@ exports.login = catchAsync(async (req, res, next) => {
       });
     }
 
-  // user.accounts[0].clearedBalance = user.accounts[0].accountBalance - 1000;
-  createSendToken(user, 200, res);
-  }
-  catch(err){
-    console.log(err)
+    // user.accounts[0].clearedBalance = user.accounts[0].accountBalance - 1000;
+    createSendToken(user, 200, res);
+  } catch (err) {
+    console.log(err);
     res.status(400).json({ status: "fail", message: err.message });
   }
 });
@@ -106,7 +103,8 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith("Bearer")
   ) {
     token = req.headers.authorization.split(" ")[1];
-  } else if (req.cookies.jwt) {
+  }
+  else if (req.cookies.jwt) {
     token = req.cookies.jwt;
   }
   if (!token) {
