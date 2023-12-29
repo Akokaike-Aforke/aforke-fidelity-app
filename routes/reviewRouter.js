@@ -8,8 +8,9 @@ const router = express.Router();
 router
   .route("/top-5-reviews")
   .get(reviewController.aliasTopReviews, reviewController.getAllReviews);
-router.route("/review-stats").get(reviewController.getReviewStatistics);
-// router.route("/review-stats").get(reviewController.getReviewStats);
+// router.route("/review-stats").get(reviewController.getReviewStatistics);
+router.route("/group-stats").get(reviewController.getGroupStatistics);
+router.route("/review-stats").get(reviewController.getReviewStats);
 router.route("/searchReviews").get(reviewController.searchReviews);
 router
   .route("/updateReviewHelpful/:reviewID")

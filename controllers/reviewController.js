@@ -138,10 +138,10 @@ exports.getReviewStats = catchAsync(async (req, res) => {
           // _id: {$toUpper: "$rating"},
           sum: { $sum: 1 },
           //the below does not really make sense but just for example
-          numReviews: { $sum: "$rating" },
-          avgRating: { $avg: "$rating" },
-          minRating: { $min: "$rating" },
-          maxRating: { $max: "$rating" },
+          // numReviews: { $sum: "$rating" },
+          // avgRating: { $avg: "$rating" },
+          // minRating: { $min: "$rating" },
+          // maxRating: { $max: "$rating" },
         },
       },
       {
@@ -269,6 +269,39 @@ exports.getReviewStatistics = catchAsync(async (req, res) => {
     res.status(400).json({
       status: "fail",
       message: "",
+    });
+  }
+});
+
+exports.getGroupStatistics = catchAsync(async (req, res) => {
+  try {
+    const stats = await Review.aggregate([
+      {
+        $match: {
+          rating: { $gte: 1 },
+        },
+      },
+          {
+            $group: {
+              _id: null,
+              numReviews: { $sum: 1 },
+              avgRating: { $avg: "$rating" },
+              minRating: { $min: "$rating" },
+              maxRating: { $max: "$rating" },
+            },
+      },
+    ]);
+    console.log(stats)
+    res.status(200).json({
+      status: "success",
+      data: {
+        stats,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "fail",
+      message: err.message,
     });
   }
 });
