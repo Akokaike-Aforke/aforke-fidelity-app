@@ -145,7 +145,7 @@ exports.getReviewStats = catchAsync(async (req, res) => {
         },
       },
       {
-        $sort: { avgRating: -1 },
+        $sort: { _id: -1 },
       },
       // {
       //     $match: {_id: {$ne: 2}}
