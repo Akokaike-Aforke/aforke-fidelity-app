@@ -259,8 +259,6 @@ exports.getReviewStatistics = catchAsync(async (req, res) => {
         },
       },
     ]);
-    // console.log(stats)
-    console.log(JSON.stringify(stats, null, 2));
     res.status(200).json({
       status: "success",
       data: {
