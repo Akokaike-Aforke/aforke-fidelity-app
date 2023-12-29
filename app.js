@@ -55,7 +55,7 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 };
 // app.use(
-//   cors({ credentials: true, origin: "https://aforke-bankify.netlify.app" })
+  // cors({ credentials: true, origin: "https://aforke-bankify.netlify.app" })
 // );
 
 app.use(cors(corsOptions));

@@ -29,6 +29,7 @@ exports.getAllReviews = catchAsync(async (req, res, next) => {
     //1. BUILD QUERY
     //A. FILTERING
     const queryObj = { ...req.query };
+    console.log(queryObj);
     const excludedFields = ["page", "sort", "limit", "fields"];
     excludedFields.forEach((el) => {
       delete queryObj[el];
@@ -167,6 +168,7 @@ exports.getReviewStats = catchAsync(async (req, res) => {
 
 exports.searchReviews = catchAsync(async (req, res) => {
   const searchTerm = req.query.s.split(",").map((s) => s.toLowerCase());
+  // const searchTerm = req.query.s;
   const reviews = await Review.find();
   const results = reviews.filter((review) =>
     review.review.toLowerCase().includes(searchTerm)
@@ -180,35 +182,13 @@ exports.searchReviews = catchAsync(async (req, res) => {
   });
 });
 
-exports.updateReviewHelpful = catchAsync(async(req, res) => {
-    try{
-        console.log(req.params.reviewID)
-        const {helpful, unhelpful} = req.body
-        const review = await Review.findByIdAndUpdate(req.params.reviewID, {$inc: {reviewHelpful: helpful, reviewNotHelpful: unhelpful}}, {new: true})
-        console.log(review)
-        res.status(200).json({
-            status: "success",
-            data: {
-                review
-            }
-        })
-    }
-    catch(err){
-        res.status(400).json({
-            status: "fail",
-            message: ""
-        })
-    }
-});
-
-exports.updateReviewUnHelpful = catchAsync(async (req, res) => {
+exports.updateReviewHelpful = catchAsync(async (req, res) => {
   try {
     console.log(req.params.reviewID);
-    const {helpful, unhelpful} = req.body;
-    console.log(helpful, unhelpful)
+    const { helpful, unhelpful } = req.body;
     const review = await Review.findByIdAndUpdate(
       req.params.reviewID,
-      { $inc: { reviewUnHelpful: helpful },  },
+      { $inc: { reviewHelpful: helpful, reviewNotHelpful: unhelpful } },
       { new: true }
     );
     console.log(review);
@@ -216,6 +196,75 @@ exports.updateReviewUnHelpful = catchAsync(async (req, res) => {
       status: "success",
       data: {
         review,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "fail",
+      message: err.message,
+    });
+  }
+});
+
+exports.updateReviewUnHelpful = catchAsync(async (req, res) => {
+  try {
+    console.log(req.params.reviewID);
+    const { helpful, unhelpful } = req.body;
+    console.log(helpful, unhelpful);
+    const review = await Review.findByIdAndUpdate(
+      req.params.reviewID,
+      { $inc: { reviewUnHelpful: helpful } },
+      { new: true }
+    );
+    console.log(review);
+    res.status(200).json({
+      status: "success",
+      data: {
+        review,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "fail",
+      message: "",
+    });
+  }
+});
+
+exports.getReviewStatistics = catchAsync(async (req, res) => {
+  try {
+    const stats = await Review.aggregate([
+      {
+        $facet: {
+          groupTotals: [
+            {
+              $group: {
+                _id: null,
+                numReviews: { $sum: 1 },
+                avgRating: { $avg: "$rating" },
+                minRating: { $min: "$rating" },
+                maxRating: { $max: "$rating" },
+              },
+            },
+          ],
+          eachTotals: [
+            {
+              $group: {
+                _id: "$rating",
+                numReviewsEach: { $sum: 1 },
+              },
+            },
+            { $sort: { _id: -1 } },
+          ],
+        },
+      },
+    ]);
+    // console.log(stats)
+    console.log(JSON.stringify(stats, null, 2));
+    res.status(200).json({
+      status: "success",
+      data: {
+        stats,
       },
     });
   } catch (err) {
